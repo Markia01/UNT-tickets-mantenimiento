@@ -103,10 +103,10 @@ Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de tu primer cambio.
 
 | Integrante | Rol |
 | --- | --- |
-| Nombre | Líder técnico / backend |
-| Nombre | Base de datos y datos |
-| Nombre | Frontend |
-| Nombre | Calidad, despliegue y exposición |
+| Garcia Martinez Ari Daniel | Líder técnico / backend |
+| Arce Armenta Fernando De Jesus | Base de datos y datos |
+| Ximena Monserrat | Frontend |
+| Valles-Ambriz Angeles | Calidad, despliegue y exposición |
 
 Proyecto académico de la Universidad Tecnológica de Nayarit, 2026.
 
