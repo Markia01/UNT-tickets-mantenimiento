@@ -14,7 +14,26 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # React Router 8 necesita Node 22.22 o superior
+          node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run lint
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Backend — instalar dependencias
+        working-directory: backend
+        run: npm ci
+      - name: Backend — lint
+        working-directory: backend
+        run: npm run lint
+
+      - name: Frontend — instalar dependencias
+        working-directory: frontend
+        run: npm ci
+      - name: Frontend — lint
+        working-directory: frontend
+        run: npm run lint
+      - name: Frontend — build
+        working-directory: frontend
+        run: npm run build
