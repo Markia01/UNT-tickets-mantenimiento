@@ -6,8 +6,8 @@ node_modules/
 .env.local
 
 # Fotos subidas por los usuarios
-uploads/*
-!uploads/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
 
 # Registros
 logs/
