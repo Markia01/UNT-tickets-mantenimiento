@@ -165,7 +165,7 @@ function CamposFiltro({ filtros, actualizar, catalogos, prefijo, claseCampo = ''
 
 // ---------- Lista ----------
 
-function TablaTickets({ tickets, ahora }) {
+function TablaTickets({ tickets, ahora, estadoEnlace }) {
   return (
     <table className="hidden w-full border-separate border-spacing-0 text-left lg:table">
       <caption className="sr-only">Tickets</caption>
@@ -190,6 +190,7 @@ function TablaTickets({ tickets, ahora }) {
             <td className="border-b border-borde px-3 py-3">
               <Link
                 to={`/admin/tickets/${t.id}`}
+                state={estadoEnlace}
                 className="font-bold underline underline-offset-2 after:absolute after:inset-0 focus-visible:outline-2 focus-visible:outline-negro"
               >
                 #{t.id}
@@ -212,13 +213,14 @@ function TablaTickets({ tickets, ahora }) {
   )
 }
 
-function TarjetasTickets({ tickets, ahora }) {
+function TarjetasTickets({ tickets, ahora, estadoEnlace }) {
   return (
     <ul className="space-y-3 lg:hidden">
       {tickets.map((t) => (
         <li key={t.id}>
           <Link
             to={`/admin/tickets/${t.id}`}
+            state={estadoEnlace}
             className="block rounded-xl border border-borde bg-tarjeta p-4 hover:border-borde-campo hover:bg-campo focus-visible:outline-2 focus-visible:outline-negro"
           >
             <span className="flex items-start justify-between gap-3">
@@ -328,6 +330,9 @@ export default function Tickets() {
     const espera = setTimeout(() => actualizar({ q: limpio }, { replace: true }), ESPERA_BUSQUEDA_MS)
     return () => clearTimeout(espera)
   }, [texto, filtros.q, actualizar])
+
+  // El detalle usa esto para que su enlace "Tickets" regrese a esta misma lista filtrada
+  const estadoEnlace = { lista: consulta ? `?${consulta}` : '' }
 
   const numFiltros = CLAVES_FILTRO.filter((clave) => filtros[clave]).length
   const hayFiltros = numFiltros > 0 || filtros.q !== ''
@@ -507,8 +512,8 @@ export default function Tickets() {
           </Card>
         ) : (
           <div className="lg:rounded-xl lg:border lg:border-borde lg:bg-tarjeta lg:p-5">
-            <TablaTickets tickets={datos.datos} ahora={ahora} />
-            <TarjetasTickets tickets={datos.datos} ahora={ahora} />
+            <TablaTickets tickets={datos.datos} ahora={ahora} estadoEnlace={estadoEnlace} />
+            <TarjetasTickets tickets={datos.datos} ahora={ahora} estadoEnlace={estadoEnlace} />
             <Paginacion
               pagina={datos.pagina}
               porPagina={datos.porPagina}

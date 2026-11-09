@@ -20,6 +20,12 @@ const ALUMNO_1 = { id: 'u5', nombre: '[ALUMNO 1]', tipo: 'Alumno' }
 const ALUMNO_2 = { id: 'u8', nombre: '[ALUMNO 2]', tipo: 'Alumno' }
 const PERSONAL = { id: 'u6', nombre: '[PERSONAL 1]', tipo: 'Personal' }
 
+// Foto de prueba: un SVG en línea con el texto, para que las imágenes se vean sin servidor
+function fotoPrueba(texto) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480"><rect width="640" height="480" fill="#DDD3BF"/><text x="320" y="240" font-family="system-ui, sans-serif" font-size="28" fill="#5C5547" text-anchor="middle" dominant-baseline="middle">${texto}</text></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
 // Arma un ticket completo a partir de cuántas horas atrás pasó cada cambio de estado.
 // El historial se genera en orden: Abierto → Asignado → En proceso → Cerrado / Cancelado.
 function crearTicket({
@@ -37,6 +43,7 @@ function crearTicket({
   canceladoHace,
   motivoCancelacion = null,
   sumados = [],
+  sinFotoReporte = false,
 }) {
   const cat = categoria(categoriaId)
   const creadoEn = hace(creadoHace)
@@ -45,7 +52,7 @@ function crearTicket({
 
   const historial = [{ estado: 'ABIERTO', usuario: persona, comentario: null, fecha: creadoEn }]
   if (asignadoHace !== undefined) {
-    historial.push({ estado: 'ASIGNADO', usuario: ADMIN, comentario: null, fecha: hace(asignadoHace) })
+    historial.push({ estado: 'ASIGNADO', usuario: ADMIN, tecnico, comentario: null, fecha: hace(asignadoHace) })
   }
   if (enProcesoHace !== undefined) {
     historial.push({ estado: 'EN_PROCESO', usuario: tecnico, comentario: null, fecha: hace(enProcesoHace) })
@@ -69,8 +76,8 @@ function crearTicket({
     categoria: cat,
     reporta,
     tecnico,
-    fotoReporte: `/uploads/tickets/${id}-reporte.jpg`,
-    fotoCierre: cerrado ? `/uploads/tickets/${id}-cierre.jpg` : null,
+    fotoReporte: sinFotoReporte ? null : fotoPrueba(`Foto del reporte #${id}`),
+    fotoCierre: cerrado ? fotoPrueba(`Foto de cierre #${id}`) : null,
     comentarioCierre: cerrado ? comentarioCierre : null,
     motivoCancelacion: estado === 'CANCELADO' ? motivoCancelacion : null,
     creadoEn,
@@ -130,6 +137,7 @@ export const ticketsMock = [
     reporta: ALUMNO_1,
     descripcion: 'La computadora se reinicia sola a los pocos minutos de encenderla.',
     creadoHace: 3,
+    sinFotoReporte: true,
   }),
   crearTicket({
     id: '12',

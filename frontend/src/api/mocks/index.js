@@ -1,3 +1,4 @@
+import { asignarTecnico, cancelarTicket, listarTecnicos, obtenerTicket } from './accionesTickets.js'
 import { calcularResumen } from './admin.js'
 import { buscarTickets, obtenerCatalogos } from './listaTickets.js'
 import { sinContrasena, usuarioDeToken, usuariosMock } from './usuarios.js'
@@ -15,9 +16,10 @@ function conRol(roles, manejador) {
   }
 }
 
-// Cada manejador recibe { cuerpo, consulta, token } y devuelve { status, datos },
-// con la misma forma que respondería la API real (ver docs/api.md).
-// `consulta` son los parámetros de la URL (?vista=activos&pagina=2) como objeto.
+// Cada manejador recibe { cuerpo, consulta, params, token, usuario } y devuelve
+// { status, datos }, con la misma forma que respondería la API real (ver docs/api.md).
+// - `consulta`: parámetros de la URL (?vista=activos&pagina=2) como objeto.
+// - `params`: partes variables de la ruta (/tickets/:id → { id }).
 const manejadores = {
   'POST /auth/login': ({ cuerpo }) => {
     const correo = String(cuerpo?.correo ?? '').trim().toLowerCase()
@@ -36,16 +38,41 @@ const manejadores = {
   'GET /admin/resumen': conRol(['ADMIN'], () => ({ status: 200, datos: calcularResumen() })),
 
   'GET /tickets': conRol(['ADMIN'], ({ consulta }) => ({ status: 200, datos: buscarTickets(consulta) })),
+  'GET /tickets/:id': conRol(['ADMIN'], ({ params }) => obtenerTicket(params.id)),
+  'PATCH /tickets/:id/asignar': conRol(['ADMIN'], ({ params, cuerpo, usuario }) =>
+    asignarTecnico(params.id, cuerpo, usuario),
+  ),
+  'PATCH /tickets/:id/cancelar': conRol(['ADMIN'], ({ params, cuerpo, usuario }) =>
+    cancelarTicket(params.id, cuerpo, usuario),
+  ),
+
+  'GET /tecnicos': conRol(['ADMIN'], () => listarTecnicos()),
 
   'GET /catalogos': conRol(null, () => ({ status: 200, datos: obtenerCatalogos() })),
 }
 
+// "PATCH /tickets/:id/asignar" → { metodo, regex, nombres: ['id'], manejador }
+const rutas = Object.entries(manejadores).map(([clave, manejador]) => {
+  const [metodo, patron] = clave.split(' ')
+  const nombres = []
+  const regex = new RegExp(
+    `^${patron.replace(/:(\w+)/g, (_, nombre) => {
+      nombres.push(nombre)
+      return '([^/]+)'
+    })}$`,
+  )
+  return { metodo, regex, nombres, manejador }
+})
+
 export function responderMock(metodo, ruta, { cuerpo, token }) {
   const [camino, query = ''] = ruta.split('?')
-  const manejador = manejadores[`${metodo} ${camino}`]
-  if (!manejador) {
-    return { status: 404, datos: { mensaje: `No hay mock para ${metodo} ${camino}` } }
+  for (const r of rutas) {
+    if (r.metodo !== metodo) continue
+    const coincidencia = r.regex.exec(camino)
+    if (!coincidencia) continue
+    const params = Object.fromEntries(r.nombres.map((n, i) => [n, decodeURIComponent(coincidencia[i + 1])]))
+    const consulta = Object.fromEntries(new URLSearchParams(query))
+    return r.manejador({ cuerpo, consulta, params, token })
   }
-  const consulta = Object.fromEntries(new URLSearchParams(query))
-  return manejador({ cuerpo, consulta, token })
+  return { status: 404, datos: { mensaje: `No hay mock para ${metodo} ${camino}` } }
 }

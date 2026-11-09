@@ -2,6 +2,8 @@ const VARIANTES = {
   principal: 'bg-negro text-crema border border-negro hover:bg-negro/90',
   secundario: 'bg-transparent text-negro border border-negro hover:bg-negro/5',
   peligro: 'bg-transparent text-peligro border border-peligro hover:bg-peligro/5',
+  // Solo para confirmar una acción destructiva dentro de ConfirmDialog
+  peligroLleno: 'bg-peligro text-crema border border-peligro hover:bg-peligro/90',
 }
 
 // Botón base. Mientras `cargando` es true muestra el texto de carga y se desactiva.

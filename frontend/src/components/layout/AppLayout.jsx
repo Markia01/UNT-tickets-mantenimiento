@@ -20,7 +20,10 @@ export default function AppLayout() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const matches = useMatches()
-  const titulo = matches.findLast((m) => m.handle?.titulo)?.handle.titulo ?? ''
+  // `handle.titulo` puede ser texto o una función de los parámetros: (params) => `Ticket #${params.id}`
+  const ruta = matches.findLast((m) => m.handle?.titulo)
+  const titulo =
+    typeof ruta?.handle.titulo === 'function' ? ruta.handle.titulo(ruta.params) : (ruta?.handle.titulo ?? '')
 
   const [contraido, setContraido] = useState(leerContraido)
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false)
