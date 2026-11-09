@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+
+/* Colores y tipografía del proyecto (ver "Guía de estilo" en CLAUDE.md) */
+@theme {
+  --font-sans: system-ui, sans-serif;
+
+  --color-negro: #111111;
+  --color-fondo: #efe7d6;
+  --color-tarjeta: #faf5ea;
+  --color-crema: #f3ebda;
+  --color-borde: #ddd3bf;
+  --color-borde-campo: #cfc4ad;
+  --color-campo: #fffdf8;
+  --color-texto-2: #5c5547;
+  --color-peligro: #a3231a;
+
+  /* Semáforo: A tiempo */
+  --color-ok-fondo: #d6ebd9;
+  --color-ok-texto: #1e5e33;
+  --color-ok-punto: #2e8b4e;
+
+  /* Semáforo: Por vencer */
+  --color-aviso-fondo: #f5e3bc;
+  --color-aviso-texto: #6e4300;
+  --color-aviso-punto: #d99a1e;
+
+  /* Semáforo: Vencido */
+  --color-error-fondo: #f6d9d3;
+  --color-error-texto: #8a1c12;
+  --color-error-punto: #c8372d;
+}
+
+body {
+  @apply bg-fondo font-sans text-sm text-negro;
+}
