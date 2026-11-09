@@ -1,14 +1,4 @@
-import { llamarApi } from './cliente.js'
-
-// Arma "?a=1&b=2" omitiendo los valores vacíos
-function aQuery(parametros = {}) {
-  const query = new URLSearchParams()
-  for (const [clave, valor] of Object.entries(parametros)) {
-    if (valor !== undefined && valor !== null && valor !== '') query.set(clave, valor)
-  }
-  const texto = query.toString()
-  return texto ? `?${texto}` : ''
-}
+import { aQuery, llamarApi } from './cliente.js'
 
 // GET /tickets (ADMIN) → { datos: [ticket], total, pagina, porPagina, conteos }
 // Parámetros: vista, q, desde, hasta, edificio, categoria, tiempo, tecnico, pagina, porPagina.

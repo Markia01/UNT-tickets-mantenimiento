@@ -48,10 +48,10 @@ Nunca se devuelve la contraseña. `activo: false` = usuario desactivado (no pued
   id,                 // string. Folio que se muestra como "#14"
   descripcion,        // string. Lo que escribió quien reporta
   estado,             // "ABIERTO" | "ASIGNADO" | "EN_PROCESO" | "CERRADO" | "CANCELADO"
-  equipo: {
-    id, tipo,         // tipo: "Aire acondicionado", "Proyector", "Computadora", ...
-    descripcion,      // marca / modelo / número de equipo
-    ubicacion: { edificio, aula }   // "Edificio B", "Aula 3"
+  equipo: {          // ver "Equipo" (sin fallas ni ultimaFalla)
+    id, tipo, descripcion,
+    ubicacion: { edificio, aula },
+    estado            // "ACTIVO" | "BAJA"
   },
   categoria: { id, nombre, horasObjetivo },   // horasObjetivo: número de horas para atenderlo
   reporta: { id, nombre, tipo },              // tipo: "Alumno" | "Docente" | "Personal"
@@ -118,6 +118,22 @@ Ejemplo:
 }
 ```
 
+### Equipo
+
+```js
+{
+  id,
+  tipo,               // uno de GET /catalogos → tiposEquipo
+  descripcion,        // marca, modelo o número: "Dell OptiPlex 3080 · equipo 12"
+  ubicacion: { edificio, aula },   // "Edificio B", "Aula 3" (aula = aula o espacio)
+  estado,             // "ACTIVO" | "BAJA". Un equipo dado de baja conserva su historial
+  fallas,             // fallas en la ventana de la regla de reemplazo (90 días)
+  ultimaFalla         // fecha ISO del ticket no cancelado más reciente | null
+}
+```
+
+`fallas` y `ultimaFalla` se calculan; solo vienen en las respuestas de `/equipos`.
+
 ### Reglas que comparten frontend y backend
 
 - **Activo:** ticket que no está `CERRADO` ni `CANCELADO`.
@@ -127,7 +143,7 @@ Ejemplo:
   - *Por vencer:* queda el 25 % o menos.
   - *Vencido:* ya pasó `venceEn`.
 - **Fallas de un equipo:** tickets de ese equipo que no están `CANCELADO`.
-- **Regla de reemplazo:** 4 o más fallas en los últimos 90 días.
+- **Regla de reemplazo:** 4 o más fallas en los últimos 90 días. Los valores vienen de `GET /configuracion`.
 
 ---
 
@@ -296,6 +312,10 @@ Respuesta `200`:
 ```json
 {
   "edificios": ["Edificio A", "Edificio B", "Edificio C"],
+  "tiposEquipo": [
+    "Aire acondicionado", "Computadora", "Contacto eléctrico",
+    "Instalación hidráulica", "Luminaria", "Pizarrón", "Proyector"
+  ],
   "categorias": [
     { "id": "c1", "nombre": "Climatización", "horasObjetivo": 48 },
     { "id": "c2", "nombre": "Audiovisual", "horasObjetivo": 24 },
@@ -306,7 +326,7 @@ Respuesta `200`:
 }
 ```
 
-`edificios` va ordenado alfabéticamente.
+`edificios` y `tiposEquipo` van ordenados alfabéticamente.
 
 Errores: `401` sin sesión.
 
@@ -403,3 +423,150 @@ Errores:
 | `400` | Falta el motivo o no es válido | `Elige el motivo de la cancelación.` |
 | `404` | El ticket no existe | `Este ticket no existe.` |
 | `409` | El ticket ya está Cerrado o Cancelado | `Este ticket ya no está activo; no se puede cancelar.` |
+
+---
+
+### `GET /equipos`
+
+Lista de equipos con sus fallas. **Rol:** `ADMIN`.
+
+| Parámetro | Valores | Descripción |
+| --- | --- | --- |
+| `q` | texto | Busca en `tipo` y `descripcion`; no distingue mayúsculas ni acentos |
+| `edificio` | texto | Igual a `ubicacion.edificio` |
+| `tipo` | texto | Igual a `tipo` |
+| `estado` | `ACTIVO` (por defecto) · `BAJA` · `TODOS` | |
+
+Orden: por `fallas` descendente (los candidatos a reemplazo primero); empate por `ultimaFalla` más reciente y luego por `tipo`.
+
+Respuesta `200`:
+
+```json
+[
+  {
+    "id": "e1",
+    "tipo": "Aire acondicionado",
+    "descripcion": "Minisplit Mirage 2 ton",
+    "ubicacion": { "edificio": "Edificio B", "aula": "Aula 3" },
+    "estado": "ACTIVO",
+    "fallas": 6,
+    "ultimaFalla": "2026-11-06T16:00:00.000Z"
+  },
+  {
+    "id": "e9",
+    "tipo": "Proyector",
+    "descripcion": "Epson PowerLite E20",
+    "ubicacion": { "edificio": "Edificio B", "aula": "Aula 2" },
+    "estado": "ACTIVO",
+    "fallas": 0,
+    "ultimaFalla": null
+  }
+]
+```
+
+Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
+
+---
+
+### `GET /equipos/:id`
+
+Ficha, estadísticas y tickets de un equipo. **Rol:** `ADMIN`.
+
+| Campo | Descripción |
+| --- | --- |
+| `equipo` | Equipo (con `fallas` y `ultimaFalla`) |
+| `estadisticas.fallasTotales` | Tickets no cancelados del equipo, de siempre |
+| `estadisticas.tiempoPromedioHoras` | Promedio de `cerradoEn − creadoEn` en horas (un decimal), **solo con tickets `CERRADO`**. `null` si no hay ninguno |
+| `estadisticas.ultimaFalla` | Igual que `equipo.ultimaFalla` |
+| `estadisticas.fallasUltimos90` | Fallas en la ventana de la regla de reemplazo (igual que `equipo.fallas`) |
+| `tickets` | Todos los tickets del equipo (incluidos cancelados), forma completa, del más reciente al más antiguo por `creadoEn` |
+
+Respuesta `200` (tickets abreviados):
+
+```json
+{
+  "equipo": {
+    "id": "e1",
+    "tipo": "Aire acondicionado",
+    "descripcion": "Minisplit Mirage 2 ton",
+    "ubicacion": { "edificio": "Edificio B", "aula": "Aula 3" },
+    "estado": "ACTIVO",
+    "fallas": 6,
+    "ultimaFalla": "2026-11-06T16:00:00.000Z"
+  },
+  "estadisticas": {
+    "fallasTotales": 7,
+    "tiempoPromedioHoras": 38.7,
+    "ultimaFalla": "2026-11-06T16:00:00.000Z",
+    "fallasUltimos90": 6
+  },
+  "tickets": [
+    { "id": "14", "estado": "ABIERTO", "...": "..." },
+    { "id": "8", "estado": "CERRADO", "...": "..." }
+  ]
+}
+```
+
+Errores: `401`, `403`, `404` `{ "mensaje": "Este equipo no existe." }`.
+
+---
+
+### `POST /equipos`
+
+Agrega un equipo (queda `ACTIVO`). **Rol:** `ADMIN`.
+
+Petición:
+
+```json
+{
+  "tipo": "Luminaria",
+  "descripcion": "Panel LED 60×60",
+  "ubicacion": { "edificio": "Edificio A", "aula": "Aula 2" }
+}
+```
+
+Respuesta `201`: el Equipo creado (`fallas: 0`, `ultimaFalla: null`).
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `400` | Falta un campo o no es válido | `Elige un tipo de equipo válido.` · `Escribe la descripción del equipo.` · `Elige un edificio válido.` · `Escribe el aula o espacio.` |
+| `409` | Ya hay un equipo con el mismo tipo, descripción y ubicación (sin distinguir mayúsculas ni acentos) | `Ya existe un equipo igual en esa ubicación.` |
+
+---
+
+### `PATCH /equipos/:id`
+
+Edita un equipo o lo da de baja. **Rol:** `ADMIN`.
+
+Petición (todos los campos son opcionales; se cambian solo los que vienen):
+
+```json
+{
+  "tipo": "Aire acondicionado",
+  "descripcion": "Minisplit Mirage 2 ton",
+  "ubicacion": { "edificio": "Edificio B", "aula": "Aula 3" },
+  "estado": "BAJA"
+}
+```
+
+Los tickets del equipo muestran los datos actualizados. Dar de baja no borra su historial.
+
+Respuesta `200`: el Equipo actualizado.
+
+Errores: los mismos `400` y `409` que `POST /equipos` (y `400` `Estado no válido.`), `404` si no existe.
+
+---
+
+### `GET /configuracion`
+
+Valores configurables del sistema. **Rol:** `ADMIN`.
+
+Respuesta `200`:
+
+```json
+{ "reemplazo": { "fallas": 4, "dias": 90 } }
+```
+
+`reemplazo`: un equipo es candidato a reemplazo con `fallas` o más fallas en los últimos `dias` días. Se ajustará desde la pantalla Categorías.

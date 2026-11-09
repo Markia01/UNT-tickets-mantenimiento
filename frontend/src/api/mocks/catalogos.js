@@ -1,4 +1,19 @@
-// Catálogos de prueba: categorías (con horas objetivo) y equipos.
+// Catálogos de prueba: categorías (con horas objetivo), tipos de equipo, equipos
+// y la configuración de la regla de reemplazo.
+
+export const configuracionMock = {
+  reemplazo: { fallas: 4, dias: 90 },
+}
+
+export const tiposEquipoMock = [
+  'Aire acondicionado',
+  'Computadora',
+  'Contacto eléctrico',
+  'Instalación hidráulica',
+  'Luminaria',
+  'Pizarrón',
+  'Proyector',
+]
 
 export const categoriasMock = [
   { id: 'c1', nombre: 'Climatización', horasObjetivo: 48 },
@@ -57,7 +72,37 @@ export const equiposMock = [
     descripcion: 'HP ProDesk 400 · equipo 4',
     ubicacion: { edificio: 'Edificio B', aula: 'Laboratorio 1' },
   },
+  // Sin tickets: aparecen con 0 fallas
+  {
+    id: 'e9',
+    tipo: 'Proyector',
+    descripcion: 'Epson PowerLite E20',
+    ubicacion: { edificio: 'Edificio B', aula: 'Aula 2' },
+  },
+  {
+    id: 'e10',
+    tipo: 'Contacto eléctrico',
+    descripcion: 'Muro frontal, doble',
+    ubicacion: { edificio: 'Edificio B', aula: 'Aula 5' },
+  },
+  {
+    id: 'e11',
+    tipo: 'Pizarrón',
+    descripcion: 'Pizarrón blanco 1.2 × 2.4 m',
+    ubicacion: { edificio: 'Edificio C', aula: 'Aula 8' },
+  },
+  // Dado de baja: su historial se conserva, pero no aparece entre los activos
+  {
+    id: 'e12',
+    tipo: 'Computadora',
+    descripcion: 'HP Compaq 6200 · equipo 7',
+    ubicacion: { edificio: 'Edificio C', aula: 'Laboratorio 2' },
+    estado: 'BAJA',
+  },
 ]
+
+// Todos los equipos tienen estado; si no se indicó, están activos
+for (const e of equiposMock) e.estado ??= 'ACTIVO'
 
 export const categoria = (id) => categoriasMock.find((c) => c.id === id)
 export const equipo = (id) => equiposMock.find((e) => e.id === id)

@@ -62,11 +62,23 @@ export function parsearFechaLocal(texto) {
 
 // Duración entre dos fechas: "45 min", "26 h", "3 d"
 export function formatearDuracion(desde, hasta) {
-  const minutos = Math.max(0, Math.round((new Date(hasta) - new Date(desde)) / 60000))
+  return formatearHoras((new Date(hasta) - new Date(desde)) / 3600000)
+}
+
+// Horas como texto corto: 0.5 → "30 min", 26.4 → "26 h", 76 → "3 d"
+export function formatearHoras(horas) {
+  const minutos = Math.max(0, Math.round(horas * 60))
   if (minutos < 60) return `${minutos} min`
-  const horas = Math.round(minutos / 60)
-  if (horas < 48) return `${horas} h`
-  return `${Math.round(horas / 24)} d`
+  const enteras = Math.round(minutos / 60)
+  if (enteras < 48) return `${enteras} h`
+  return `${Math.round(enteras / 24)} d`
+}
+
+// "2 nov 2026"
+export function formatearDia(fecha) {
+  const d = new Date(fecha)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}`
 }
 
 // "2 nov 2026, 09:12"

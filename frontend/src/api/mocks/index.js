@@ -1,5 +1,6 @@
 import { asignarTecnico, cancelarTicket, listarTecnicos, obtenerTicket } from './accionesTickets.js'
 import { calcularResumen } from './admin.js'
+import { crearEquipo, editarEquipo, listarEquipos, obtenerConfiguracion, obtenerEquipo } from './equipos.js'
 import { buscarTickets, obtenerCatalogos } from './listaTickets.js'
 import { sinContrasena, usuarioDeToken, usuariosMock } from './usuarios.js'
 
@@ -49,6 +50,13 @@ const manejadores = {
   'GET /tecnicos': conRol(['ADMIN'], () => listarTecnicos()),
 
   'GET /catalogos': conRol(null, () => ({ status: 200, datos: obtenerCatalogos() })),
+
+  'GET /equipos': conRol(['ADMIN'], ({ consulta }) => listarEquipos(consulta)),
+  'GET /equipos/:id': conRol(['ADMIN'], ({ params }) => obtenerEquipo(params.id)),
+  'POST /equipos': conRol(['ADMIN'], ({ cuerpo }) => crearEquipo(cuerpo)),
+  'PATCH /equipos/:id': conRol(['ADMIN'], ({ params, cuerpo }) => editarEquipo(params.id, cuerpo)),
+
+  'GET /configuracion': conRol(['ADMIN'], () => obtenerConfiguracion()),
 }
 
 // "PATCH /tickets/:id/asignar" → { metodo, regex, nombres: ['id'], manejador }

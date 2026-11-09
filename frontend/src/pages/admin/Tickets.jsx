@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useCallback, useRef, useState } from 'react'
+import { Link } from 'react-router'
 import { getCatalogos, getTickets } from '../../api/tickets.js'
 import { IconoBuscar, IconoCerrar, IconoFiltros } from '../../components/layout/iconos.jsx'
 import Button from '../../components/ui/Button.jsx'
+import CampoBusqueda from '../../components/ui/CampoBusqueda.jsx'
 import Card from '../../components/ui/Card.jsx'
 import EmptyState from '../../components/ui/EmptyState.jsx'
 import Field from '../../components/ui/Field.jsx'
@@ -11,6 +12,8 @@ import Pill from '../../components/ui/Pill.jsx'
 import Select from '../../components/ui/Select.jsx'
 import Skeleton from '../../components/ui/Skeleton.jsx'
 import { useDatos } from '../../hooks/useDatos.js'
+import { useFiltrosUrl } from '../../hooks/useFiltrosUrl.js'
+import { useTextoDiferido } from '../../hooks/useTextoDiferido.js'
 import { formatearDuracion } from '../../utils/fechas.js'
 import { calcularSemaforo, esActivo, ETIQUETA_SEMAFORO } from '../../utils/semaforo.js'
 import { ETIQUETA_ESTADO, formatearUbicacion } from '../../utils/ticket.js'
@@ -30,13 +33,9 @@ const TEXTO_ORDEN = {
   todos: 'Primero los activos, por vencimiento (los más urgentes primero); después los cerrados, los más recientes primero.',
 }
 
-const ESPERA_BUSQUEDA_MS = 300
-
 // ---------- Filtros en la URL ----------
 
-function useFiltrosUrl() {
-  const [params, setParams] = useSearchParams()
-
+function leerFiltros(params) {
   const vista = params.get('vista')
   const filtros = {
     vista: VISTAS.some((v) => v.valor === vista) ? vista : 'todos',
@@ -44,28 +43,7 @@ function useFiltrosUrl() {
     pagina: Math.max(1, Number.parseInt(params.get('pagina'), 10) || 1),
   }
   for (const clave of CLAVES_FILTRO) filtros[clave] = params.get(clave) ?? ''
-
-  // Aplica cambios a la URL (null o '' borra el parámetro). Cualquier cambio que no
-  // sea de página regresa a la página 1.
-  const actualizar = useCallback(
-    (cambios, { replace = false } = {}) => {
-      setParams(
-        (previos) => {
-          const siguientes = new URLSearchParams(previos)
-          for (const [clave, valor] of Object.entries(cambios)) {
-            if (valor) siguientes.set(clave, valor)
-            else siguientes.delete(clave)
-          }
-          if (!('pagina' in cambios)) siguientes.delete('pagina')
-          return siguientes
-        },
-        { replace },
-      )
-    },
-    [setParams],
-  )
-
-  return { filtros, actualizar, consulta: params.toString() }
+  return filtros
 }
 
 // ---------- Celdas ----------
@@ -307,7 +285,8 @@ function ListaCargando() {
 // ---------- Página ----------
 
 export default function Tickets() {
-  const { filtros, actualizar, consulta } = useFiltrosUrl()
+  const { params, actualizar, consulta } = useFiltrosUrl()
+  const filtros = leerFiltros(params)
 
   const cargar = useCallback(() => getTickets(Object.fromEntries(new URLSearchParams(consulta))), [consulta])
   const { datos, cargando, error, recibidoEn: ahora, reintentar } = useDatos(cargar)
@@ -316,20 +295,9 @@ export default function Tickets() {
   const [panelAbierto, setPanelAbierto] = useState(false)
   const refLista = useRef(null)
 
-  // Búsqueda por ID: el texto se escribe libre y se manda a la URL 300 ms después.
-  // Si la URL cambia por otra vía (Limpiar, atrás/adelante), el texto se sincroniza.
-  const [texto, setTexto] = useState(filtros.q)
-  const [qAnterior, setQAnterior] = useState(filtros.q)
-  if (filtros.q !== qAnterior) {
-    setQAnterior(filtros.q)
-    setTexto(filtros.q)
-  }
-  useEffect(() => {
-    const limpio = texto.trim()
-    if (limpio === filtros.q) return
-    const espera = setTimeout(() => actualizar({ q: limpio }, { replace: true }), ESPERA_BUSQUEDA_MS)
-    return () => clearTimeout(espera)
-  }, [texto, filtros.q, actualizar])
+  // Búsqueda por ID: se manda a la URL 300 ms después de dejar de escribir
+  const confirmarBusqueda = useCallback((q) => actualizar({ q }, { replace: true }), [actualizar])
+  const [texto, setTexto] = useTextoDiferido(filtros.q, confirmarBusqueda)
 
   // El detalle usa esto para que su enlace "Tickets" regrese a esta misma lista filtrada
   const estadoEnlace = { lista: consulta ? `?${consulta}` : '' }
@@ -382,27 +350,16 @@ export default function Tickets() {
       {/* Filtros: tarjeta completa en escritorio; buscador + botón "Filtros" en celular */}
       <section aria-label="Filtros" className="md:rounded-xl md:border md:border-borde md:bg-tarjeta md:p-5">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="min-w-0 flex-1 md:w-48 md:flex-none">
-            <label
-              htmlFor="buscar-id"
-              className="sr-only md:not-sr-only md:mb-1.5 md:block md:text-xs md:font-semibold md:text-texto-2"
-            >
-              Buscar por ID
-            </label>
-            <div className="relative">
-              <IconoBuscar className="pointer-events-none absolute top-1/2 left-3 size-[18px] -translate-y-1/2 text-texto-2" />
-              <input
-                id="buscar-id"
-                type="search"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder="Buscar por ID"
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                className="block min-h-12 w-full rounded-lg border border-borde-campo bg-campo pr-3 pl-10 text-base text-negro placeholder:text-texto-2/80 focus:outline-2 focus:outline-offset-1 focus:outline-negro"
-              />
-            </div>
-          </div>
+          <CampoBusqueda
+            id="buscar-id"
+            label="Buscar por ID"
+            etiquetaSoloEscritorio
+            inputMode="numeric"
+            placeholder="Buscar por ID"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            className="min-w-0 flex-1 md:w-48 md:flex-none"
+          />
 
           <button
             type="button"
