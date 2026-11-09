@@ -5,6 +5,7 @@ import RutaProtegida from './components/layout/RutaProtegida.jsx'
 import Login from './pages/auth/Login.jsx'
 import SinPermiso from './pages/errores/SinPermiso.jsx'
 import Inicio from './pages/admin/Inicio.jsx'
+import Tickets from './pages/admin/Tickets.jsx'
 import PaginaTemporal from './pages/PaginaTemporal.jsx'
 
 // Ruta con sesión: `titulo` es el nombre que muestra la barra superior.
@@ -33,7 +34,7 @@ export const router = createBrowserRouter([
             element: <RutaProtegida roles={['ADMIN']} />,
             children: [
               vista('/admin', 'Inicio', <Inicio />),
-              vista('/admin/tickets', 'Tickets'),
+              vista('/admin/tickets', 'Tickets', <Tickets />),
               vista('/admin/tickets/:id', 'Detalle del ticket'),
               vista('/admin/equipos', 'Equipos'),
               vista('/admin/equipos/:id', 'Historial del equipo'),

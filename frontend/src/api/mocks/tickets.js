@@ -59,6 +59,7 @@ function crearTicket({
 
   const estado = historial.at(-1).estado
   const cerrado = estado === 'CERRADO'
+  const terminado = cerrado || estado === 'CANCELADO'
 
   return {
     id,
@@ -74,7 +75,8 @@ function crearTicket({
     motivoCancelacion: estado === 'CANCELADO' ? motivoCancelacion : null,
     creadoEn,
     venceEn,
-    cerradoEn: cerrado ? hace(cerradoHace) : null,
+    // Fecha en que dejó de estar activo: al cerrarse o al cancelarse
+    cerradoEn: terminado ? historial.at(-1).fecha : null,
     historial,
     sumados,
   }
