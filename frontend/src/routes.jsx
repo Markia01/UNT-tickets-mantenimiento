@@ -4,13 +4,15 @@ import RedirigirInicio from './components/layout/RedirigirInicio.jsx'
 import RutaProtegida from './components/layout/RutaProtegida.jsx'
 import Login from './pages/auth/Login.jsx'
 import SinPermiso from './pages/errores/SinPermiso.jsx'
+import Inicio from './pages/admin/Inicio.jsx'
 import PaginaTemporal from './pages/PaginaTemporal.jsx'
 
-// Ruta con sesión: `titulo` es el nombre que muestra la barra superior
-const vista = (path, titulo) => ({
+// Ruta con sesión: `titulo` es el nombre que muestra la barra superior.
+// Sin `element` muestra la página temporal.
+const vista = (path, titulo, element = <PaginaTemporal nombre={titulo} />) => ({
   path,
   handle: { titulo },
-  element: <PaginaTemporal nombre={titulo} />,
+  element,
 })
 
 export const router = createBrowserRouter([
@@ -30,7 +32,7 @@ export const router = createBrowserRouter([
           {
             element: <RutaProtegida roles={['ADMIN']} />,
             children: [
-              vista('/admin', 'Inicio'),
+              vista('/admin', 'Inicio', <Inicio />),
               vista('/admin/tickets', 'Tickets'),
               vista('/admin/tickets/:id', 'Detalle del ticket'),
               vista('/admin/equipos', 'Equipos'),
