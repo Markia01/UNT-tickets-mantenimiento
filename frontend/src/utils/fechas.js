@@ -68,3 +68,18 @@ export function formatearDuracion(desde, hasta) {
   if (horas < 48) return `${horas} h`
   return `${Math.round(horas / 24)} d`
 }
+
+// "2 nov 2026, 09:12"
+export function formatearFechaCompleta(fecha) {
+  const d = new Date(fecha)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}, ${formatearHora(d)}`
+}
+
+// "20 oct, 09:30" (con año solo si no es el de `ahora`: "20 oct 2025, 09:30")
+export function formatearFechaCorta(fecha, ahora = new Date()) {
+  const d = new Date(fecha)
+  if (Number.isNaN(d.getTime())) return ''
+  const anio = d.getFullYear() !== new Date(ahora).getFullYear() ? ` ${d.getFullYear()}` : ''
+  return `${d.getDate()} ${MESES[d.getMonth()]}${anio}, ${formatearHora(d)}`
+}

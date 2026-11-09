@@ -9,13 +9,13 @@ const SEMAFORO = {
   VENCIDO: { caja: 'bg-error-fondo text-error-texto', punto: 'bg-error-punto' },
 }
 
-// Estados del ticket: tonos neutros para no confundirse con el semáforo
+// Estados del ticket (guía de estilo): tonos neutros para no confundirse con el semáforo
 const ESTADO = {
-  ABIERTO: 'border border-negro text-negro',
-  ASIGNADO: 'bg-borde text-negro',
-  EN_PROCESO: 'bg-negro text-crema',
+  ABIERTO: 'border border-negro bg-negro text-crema',
+  ASIGNADO: 'border border-borde bg-borde text-negro',
+  EN_PROCESO: 'border border-negro text-negro',
   CERRADO: 'border border-borde bg-crema text-texto-2',
-  CANCELADO: 'border border-peligro/40 text-peligro',
+  CANCELADO: 'border border-borde bg-crema text-texto-2 line-through',
 }
 
 const ROL = {
@@ -26,7 +26,7 @@ const ROL = {
 
 const BASE = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold'
 
-// <Pill tipo="semaforo" valor="VENCIDO" />, <Pill tipo="estado" valor="EN_PROCESO" />,
+// <Pill tipo="semaforo" valor="VENCIDO" /> (con children cambia el texto: "Vencido hace 6 h"), <Pill tipo="estado" valor="EN_PROCESO" />,
 // <Pill tipo="rol" valor="TECNICO" />, <Pill tipo="neutro">Cerrado en 26 h</Pill>
 export default function Pill({ tipo, valor, className = '', children }) {
   if (tipo === 'semaforo') {
@@ -35,7 +35,7 @@ export default function Pill({ tipo, valor, className = '', children }) {
     return (
       <span className={`${BASE} ${estilo.caja} ${className}`}>
         <span aria-hidden="true" className={`size-1.5 rounded-full ${estilo.punto}`} />
-        {ETIQUETA_SEMAFORO[valor]}
+        {children ?? ETIQUETA_SEMAFORO[valor]}
       </span>
     )
   }

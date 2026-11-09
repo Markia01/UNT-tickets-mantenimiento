@@ -18,7 +18,7 @@ function textoActividad(ticket, entrada) {
     case 'ABIERTO':
       return `creado por ${quien} · ${ticket.equipo.tipo}, ${ticket.equipo.ubicacion.aula}`
     case 'ASIGNADO':
-      return `asignado a ${ticket.tecnico?.nombre ?? 'un técnico'}`
+      return `asignado a ${entrada.tecnico?.nombre ?? ticket.tecnico?.nombre ?? 'un técnico'}`
     case 'EN_PROCESO':
       return `en proceso por ${quien}`
     case 'CERRADO':

@@ -11,3 +11,10 @@ export function formatearUbicacion(ubicacion) {
   if (!ubicacion) return ''
   return [ubicacion.edificio, ubicacion.aula].filter(Boolean).join(' · ')
 }
+
+// Motivos válidos para cancelar un ticket (PATCH /tickets/:id/cancelar)
+export const MOTIVOS_CANCELACION = [
+  'Duplicado de otro ticket',
+  'Reporte falso o de prueba',
+  'No corresponde a mantenimiento',
+]

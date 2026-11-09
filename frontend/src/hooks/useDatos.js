@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 // Carga datos con una función de src/api y expone
-// { datos, cargando, error, recibidoEn, reintentar }.
+// { datos, cargando, error, recibidoEn, reintentar, reemplazar }.
 //
 // - `cargar` debe ser estable (una función del módulo o envuelta en useCallback).
 //   Cuando cambia (por ejemplo, porque cambiaron los filtros) se vuelve a cargar.
@@ -27,6 +27,12 @@ export function useDatos(cargar) {
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), [])
 
+  // Sustituye los datos sin volver a cargar (p. ej. con el ticket que devolvió un PATCH)
+  const reemplazar = useCallback(
+    (datos) => setEstado((previo) => ({ ...previo, datos, error: null, recibidoEn: new Date() })),
+    [],
+  )
+
   const cargando = estado.para?.cargar !== cargar || estado.para?.intento !== intento
   return {
     datos: estado.datos,
@@ -34,5 +40,6 @@ export function useDatos(cargar) {
     error: cargando ? null : estado.error,
     recibidoEn: estado.recibidoEn,
     reintentar,
+    reemplazar,
   }
 }

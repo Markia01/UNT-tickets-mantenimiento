@@ -19,6 +19,7 @@ Los datos de prueba del frontend (`frontend/src/api/mocks/`) usan exactamente es
 | `401` | Sin token, token inválido o vencido (el frontend cierra la sesión y manda a `/login`). En `POST /auth/login`: correo o contraseña incorrectos |
 | `403` | El rol del usuario no tiene permiso para el endpoint |
 | `404` | El recurso no existe |
+| `409` | La acción no aplica al estado actual (por ejemplo, asignar un ticket cerrado) |
 
 **Roles:** `ADMIN`, `TECNICO`, `REPORTANTE`.
 
@@ -33,11 +34,12 @@ Los datos de prueba del frontend (`frontend/src/api/mocks/`) usan exactamente es
   "id": "u1",
   "nombre": "Administración de Mantenimiento",
   "correo": "admin@utnay.edu.mx",
-  "rol": "ADMIN"
+  "rol": "ADMIN",
+  "activo": true
 }
 ```
 
-Nunca se devuelve la contraseña.
+Nunca se devuelve la contraseña. `activo: false` = usuario desactivado (no puede iniciar sesión ni recibir tickets).
 
 ### Ticket
 
@@ -62,7 +64,13 @@ Nunca se devuelve la contraseña.
   venceEn,            // fecha ISO = creadoEn + categoria.horasObjetivo
   cerradoEn,          // fecha ISO | null. Cuándo dejó de estar activo: al cerrarse o al cancelarse
   historial: [        // en orden cronológico, el primero es "ABIERTO"
-    { estado, usuario: { id, nombre }, comentario /* string | null */, fecha }
+    {
+      estado,                     // estado al que pasó el ticket
+      usuario: { id, nombre },    // quién hizo el cambio
+      tecnico: { id, nombre },    // solo en entradas "ASIGNADO": a quién se asignó
+      comentario,                 // string | null (en "CANCELADO", el motivo)
+      fecha
+    }
   ],
   sumados: [ { id, nombre } ]   // personas que reportaron la misma falla
 }
@@ -101,6 +109,7 @@ Ejemplo:
     {
       "estado": "ASIGNADO",
       "usuario": { "id": "u1", "nombre": "Administración de Mantenimiento" },
+      "tecnico": { "id": "u4", "nombre": "[TÉCNICO 1]" },
       "comentario": null,
       "fecha": "2026-11-07T16:00:00.000Z"
     }
@@ -143,7 +152,8 @@ Respuesta `200`:
     "id": "u1",
     "nombre": "Administración de Mantenimiento",
     "correo": "admin@utnay.edu.mx",
-    "rol": "ADMIN"
+    "rol": "ADMIN",
+    "activo": true
   }
 }
 ```
@@ -299,3 +309,97 @@ Respuesta `200`:
 `edificios` va ordenado alfabéticamente.
 
 Errores: `401` sin sesión.
+
+---
+
+### `GET /tickets/:id`
+
+Un ticket con su forma completa. **Rol:** `ADMIN`.
+
+Respuesta `200`: un Ticket (ver el ejemplo en "Formas de datos").
+
+Errores: `401` sin sesión, `403` si el rol no es `ADMIN`, `404` si no existe:
+
+```json
+{ "mensaje": "Este ticket no existe." }
+```
+
+---
+
+### `GET /tecnicos`
+
+Técnicos **activos** con su carga actual, para elegir a quién asignar. **Rol:** `ADMIN`.
+
+`activos` = número de tickets activos asignados a ese técnico. Ordenados por nombre.
+
+Respuesta `200`:
+
+```json
+[
+  { "id": "u4", "nombre": "[TÉCNICO 1]", "activos": 2 },
+  { "id": "u2", "nombre": "[TÉCNICO 2]", "activos": 3 }
+]
+```
+
+Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
+
+---
+
+### `PATCH /tickets/:id/asignar`
+
+Asigna o reasigna el técnico de un ticket activo. **Rol:** `ADMIN`.
+
+Petición:
+
+```json
+{ "tecnicoId": "u4" }
+```
+
+Efectos:
+
+- `tecnico` pasa a ser el técnico elegido y `estado` a `ASIGNADO`, también si estaba `EN_PROCESO` (al reasignar, el nuevo técnico lo retoma).
+- Se agrega al `historial`: `{ estado: "ASIGNADO", usuario: <admin>, tecnico: <técnico>, comentario, fecha }`. Al reasignar, `comentario` dice quién lo tenía antes; si no, es `null`.
+
+Respuesta `200`: el Ticket actualizado, con su forma completa.
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `400` | `tecnicoId` no es un técnico activo | `Elige un técnico válido.` |
+| `400` | Ya está asignado a ese técnico | `El ticket ya está asignado a ese técnico.` |
+| `404` | El ticket no existe | `Este ticket no existe.` |
+| `409` | El ticket está Cerrado o Cancelado | `Este ticket ya no está activo; no se puede asignar.` |
+
+---
+
+### `PATCH /tickets/:id/cancelar`
+
+Cancela un ticket activo. No se puede deshacer. **Rol:** `ADMIN`.
+
+Petición:
+
+```json
+{ "motivo": "Duplicado de otro ticket" }
+```
+
+`motivo` debe ser uno de:
+
+- `Duplicado de otro ticket`
+- `Reporte falso o de prueba`
+- `No corresponde a mantenimiento`
+
+Efectos:
+
+- `estado` pasa a `CANCELADO`, `motivoCancelacion` = `motivo` y `cerradoEn` = ahora.
+- Se agrega al `historial`: `{ estado: "CANCELADO", usuario: <admin>, comentario: <motivo>, fecha }`.
+
+Respuesta `200`: el Ticket actualizado, con su forma completa.
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `400` | Falta el motivo o no es válido | `Elige el motivo de la cancelación.` |
+| `404` | El ticket no existe | `Este ticket no existe.` |
+| `409` | El ticket ya está Cerrado o Cancelado | `Este ticket ya no está activo; no se puede cancelar.` |

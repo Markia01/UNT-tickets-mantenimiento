@@ -6,6 +6,7 @@ export const usuariosMock = [
     correo: 'admin@utnay.edu.mx',
     rol: 'ADMIN',
     contrasena: 'demo1234',
+    activo: true,
   },
   {
     id: 'u2',
@@ -13,6 +14,7 @@ export const usuariosMock = [
     correo: 'tecnico2@utnay.edu.mx',
     rol: 'TECNICO',
     contrasena: 'demo1234',
+    activo: true,
   },
   {
     id: 'u3',
@@ -20,6 +22,7 @@ export const usuariosMock = [
     correo: 'docente@utnay.edu.mx',
     rol: 'REPORTANTE',
     contrasena: 'demo1234',
+    activo: true,
   },
   {
     id: 'u4',
@@ -27,6 +30,7 @@ export const usuariosMock = [
     correo: 'tecnico1@utnay.edu.mx',
     rol: 'TECNICO',
     contrasena: 'demo1234',
+    activo: true,
   },
 ]
 

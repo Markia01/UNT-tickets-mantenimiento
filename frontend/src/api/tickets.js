@@ -21,3 +21,23 @@ export function getTickets(filtros) {
 export function getCatalogos() {
   return llamarApi('/catalogos')
 }
+
+// GET /tickets/:id (ADMIN) → ticket completo. 404 si no existe.
+export function getTicket(id) {
+  return llamarApi(`/tickets/${encodeURIComponent(id)}`)
+}
+
+// GET /tecnicos (ADMIN) → [{ id, nombre, activos }] solo técnicos activos
+export function getTecnicos() {
+  return llamarApi('/tecnicos')
+}
+
+// PATCH /tickets/:id/asignar (ADMIN) → ticket actualizado (estado ASIGNADO)
+export function asignarTecnico(id, tecnicoId) {
+  return llamarApi(`/tickets/${encodeURIComponent(id)}/asignar`, { metodo: 'PATCH', cuerpo: { tecnicoId } })
+}
+
+// PATCH /tickets/:id/cancelar (ADMIN) → ticket actualizado (estado CANCELADO)
+export function cancelarTicket(id, motivo) {
+  return llamarApi(`/tickets/${encodeURIComponent(id)}/cancelar`, { metodo: 'PATCH', cuerpo: { motivo } })
+}
