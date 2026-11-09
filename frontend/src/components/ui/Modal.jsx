@@ -38,6 +38,8 @@ export default function Modal({
     if (!abierto && dialogo.open) dialogo.close()
   }, [abierto])
 
+  const abajo = posicion === 'abajo'
+
   const cerrar = () => {
     if (!bloqueado) onCerrar()
   }
@@ -64,7 +66,7 @@ export default function Modal({
       <div className="flex max-h-[85dvh] flex-col">
         <header
           className={`flex shrink-0 items-center justify-between gap-3 ${
-            conCerrar ? 'border-b border-borde py-2 pr-2 pl-5' : 'px-6 pt-6'
+            abajo ? 'border-b border-borde py-2 pr-2 pl-5' : conCerrar ? 'pt-5 pr-4 pb-1 pl-7' : 'px-7 pt-7'
           }`}
         >
           <h2 id={idTitulo} className="text-lg font-semibold">
@@ -82,10 +84,10 @@ export default function Modal({
             </button>
           )}
         </header>
-        <div className={`min-h-0 flex-1 overflow-y-auto ${conCerrar ? 'p-5' : 'px-6 pt-2 pb-4'}`}>{children}</div>
+        <div className={`min-h-0 flex-1 overflow-y-auto ${abajo ? 'p-5' : 'px-7 pt-3 pb-5'}`}>{children}</div>
         {pie && (
           <footer
-            className={`flex shrink-0 gap-3 ${conCerrar ? 'border-t border-borde p-4' : 'justify-end px-6 pb-6'}`}
+            className={`flex shrink-0 gap-3 ${abajo ? 'border-t border-borde p-4' : 'flex-wrap justify-end px-7 pb-7'}`}
           >
             {pie}
           </footer>

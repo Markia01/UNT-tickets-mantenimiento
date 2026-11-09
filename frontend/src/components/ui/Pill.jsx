@@ -18,6 +18,11 @@ const ESTADO = {
   CANCELADO: 'border border-borde bg-crema text-texto-2 line-through',
 }
 
+const EQUIPO = {
+  ACTIVO: { clase: 'border border-negro text-negro', texto: 'Activo' },
+  BAJA: { clase: 'border border-borde bg-borde text-texto-2', texto: 'Dado de baja' },
+}
+
 const ROL = {
   ADMIN: 'bg-negro text-crema',
   TECNICO: 'bg-borde text-negro',
@@ -27,7 +32,7 @@ const ROL = {
 const BASE = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold'
 
 // <Pill tipo="semaforo" valor="VENCIDO" /> (con children cambia el texto: "Vencido hace 6 h"), <Pill tipo="estado" valor="EN_PROCESO" />,
-// <Pill tipo="rol" valor="TECNICO" />, <Pill tipo="neutro">Cerrado en 26 h</Pill>
+// <Pill tipo="equipo" valor="BAJA" />, <Pill tipo="rol" valor="TECNICO" />, <Pill tipo="neutro">Cerrado en 26 h</Pill>
 export default function Pill({ tipo, valor, className = '', children }) {
   if (tipo === 'semaforo') {
     const estilo = SEMAFORO[valor]
@@ -47,6 +52,12 @@ export default function Pill({ tipo, valor, className = '', children }) {
   // Etiqueta gris con texto libre, p. ej. "Cerrado en 26 h"
   if (tipo === 'neutro') {
     return <span className={`${BASE} bg-borde text-texto-2 ${className}`}>{children}</span>
+  }
+
+  if (tipo === 'equipo') {
+    const estilo = EQUIPO[valor]
+    if (!estilo) return null
+    return <span className={`${BASE} ${estilo.clase} ${className}`}>{estilo.texto}</span>
   }
 
   if (tipo === 'rol') {

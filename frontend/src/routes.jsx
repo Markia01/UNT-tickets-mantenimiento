@@ -5,6 +5,8 @@ import RutaProtegida from './components/layout/RutaProtegida.jsx'
 import Login from './pages/auth/Login.jsx'
 import SinPermiso from './pages/errores/SinPermiso.jsx'
 import DetalleTicket from './pages/admin/DetalleTicket.jsx'
+import Equipos from './pages/admin/Equipos.jsx'
+import HistorialEquipo from './pages/admin/HistorialEquipo.jsx'
 import Inicio from './pages/admin/Inicio.jsx'
 import Tickets from './pages/admin/Tickets.jsx'
 import PaginaTemporal from './pages/PaginaTemporal.jsx'
@@ -37,8 +39,8 @@ export const router = createBrowserRouter([
               vista('/admin', 'Inicio', <Inicio />),
               vista('/admin/tickets', 'Tickets', <Tickets />),
               vista('/admin/tickets/:id', (params) => `Ticket #${params.id}`, <DetalleTicket />),
-              vista('/admin/equipos', 'Equipos'),
-              vista('/admin/equipos/:id', 'Historial del equipo'),
+              vista('/admin/equipos', 'Equipos', <Equipos />),
+              vista('/admin/equipos/:id', 'Historial del equipo', <HistorialEquipo />),
               vista('/admin/usuarios', 'Usuarios'),
               vista('/admin/categorias', 'Categorías'),
             ],

@@ -1,6 +1,6 @@
 import { parsearFechaLocal } from '../../utils/fechas.js'
 import { calcularSemaforo, esActivo } from '../../utils/semaforo.js'
-import { categoriasMock, equiposMock } from './catalogos.js'
+import { categoriasMock, equiposMock, tiposEquipoMock } from './catalogos.js'
 import { ticketsMock } from './tickets.js'
 
 const POR_PAGINA = 10
@@ -77,5 +77,5 @@ export function obtenerCatalogos() {
   const edificios = [...new Set(equiposMock.map((e) => e.ubicacion.edificio))].sort((a, b) =>
     a.localeCompare(b, 'es'),
   )
-  return { edificios, categorias: categoriasMock }
+  return { edificios, categorias: categoriasMock, tiposEquipo: tiposEquipoMock }
 }

@@ -166,3 +166,90 @@ export function IconoAlerta(props) {
     </Icono>
   )
 }
+
+export function IconoMas(props) {
+  return (
+    <Icono {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Icono>
+  )
+}
+
+export function IconoAdvertencia(props) {
+  return (
+    <Icono {...props}>
+      <path d="M12 3.5l9.5 16.5h-19L12 3.5z" />
+      <path d="M12 10v4.5M12 17.5v.01" />
+    </Icono>
+  )
+}
+
+export function IconoAire(props) {
+  return (
+    <Icono {...props}>
+      <rect x="3" y="5" width="18" height="8" rx="2" />
+      <path d="M7 10h10M8 16.5l-1 2.5M12 16.5V19M16 16.5l1 2.5" />
+    </Icono>
+  )
+}
+
+export function IconoProyector(props) {
+  return (
+    <Icono {...props}>
+      <rect x="2.5" y="8" width="19" height="9" rx="2" />
+      <circle cx="15.5" cy="12.5" r="2.5" />
+      <path d="M6 12.5h4M6 17v2M18 17v2" />
+    </Icono>
+  )
+}
+
+export function IconoFoco(props) {
+  return (
+    <Icono {...props}>
+      <path d="M9 18h6M10 21h4" />
+      <path d="M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0012 3z" />
+    </Icono>
+  )
+}
+
+export function IconoEnchufe(props) {
+  return (
+    <Icono {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="M10 9v2M14 9v2M9.5 15h5" />
+    </Icono>
+  )
+}
+
+export function IconoGota(props) {
+  return (
+    <Icono {...props}>
+      <path d="M12 3.5s6 6.6 6 10.5a6 6 0 01-12 0c0-3.9 6-10.5 6-10.5z" />
+    </Icono>
+  )
+}
+
+export function IconoPizarron(props) {
+  return (
+    <Icono {...props}>
+      <rect x="3" y="4" width="18" height="12" rx="1.5" />
+      <path d="M8 20l2-4M16 20l-2-4M7 9h6M7 12h4" />
+    </Icono>
+  )
+}
+
+const ICONO_POR_TIPO = {
+  'Aire acondicionado': IconoAire,
+  Proyector: IconoProyector,
+  Computadora: IconoEquipos,
+  Luminaria: IconoFoco,
+  'Contacto eléctrico': IconoEnchufe,
+  'Instalación hidráulica': IconoGota,
+  Pizarrón: IconoPizarron,
+}
+
+// Ícono según el tipo de equipo (o uno genérico si el tipo no está en la lista)
+export function IconoTipoEquipo({ tipo, ...props }) {
+  const Componente = ICONO_POR_TIPO[tipo] ?? IconoEquipos
+  return <Componente {...props} />
+}

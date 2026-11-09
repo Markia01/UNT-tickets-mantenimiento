@@ -20,6 +20,16 @@ export function registrarAlNoAutorizado(fn) {
   alNoAutorizado = fn
 }
 
+// Arma "?a=1&b=2" omitiendo los valores vacíos
+export function aQuery(parametros = {}) {
+  const query = new URLSearchParams()
+  for (const [clave, valor] of Object.entries(parametros)) {
+    if (valor !== undefined && valor !== null && valor !== '') query.set(clave, valor)
+  }
+  const texto = query.toString()
+  return texto ? `?${texto}` : ''
+}
+
 const esperar = (ms) => new Promise((resolver) => setTimeout(resolver, ms))
 
 async function llamarMock(metodo, ruta, cuerpo, token) {

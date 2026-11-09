@@ -1,6 +1,7 @@
 import { inicioDeSemana } from '../../utils/fechas.js'
 import { calcularSemaforo, esActivo, ORDEN_URGENCIA } from '../../utils/semaforo.js'
 import { formatearUbicacion } from '../../utils/ticket.js'
+import { configuracionMock } from './catalogos.js'
 import { ticketsMock } from './tickets.js'
 import { usuariosMock } from './usuarios.js'
 
@@ -8,7 +9,6 @@ const DIA_MS = 24 * 60 * 60 * 1000
 const MAX_ATENCION = 5
 const MAX_ACTIVIDAD = 5
 const MAX_EQUIPOS = 3
-const DIAS_FALLAS = 90
 
 const tiempo = (fecha) => new Date(fecha).getTime()
 
@@ -70,8 +70,8 @@ export function calcularResumen(tickets = ticketsMock, ahora = new Date()) {
     }))
     .sort((a, b) => a.tecnico.nombre.localeCompare(b.tecnico.nombre, 'es'))
 
-  // Fallas = tickets no cancelados reportados en los últimos 90 días
-  const desde = tiempo(ahora) - DIAS_FALLAS * DIA_MS
+  // Fallas = tickets no cancelados reportados en la ventana de la regla de reemplazo (90 días)
+  const desde = tiempo(ahora) - configuracionMock.reemplazo.dias * DIA_MS
   const fallasPorEquipo = new Map()
   for (const t of tickets) {
     if (t.estado === 'CANCELADO' || tiempo(t.creadoEn) < desde) continue
