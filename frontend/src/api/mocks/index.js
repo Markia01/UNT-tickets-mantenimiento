@@ -1,4 +1,5 @@
 import { calcularResumen } from './admin.js'
+import { buscarTickets, obtenerCatalogos } from './listaTickets.js'
 import { sinContrasena, usuarioDeToken, usuariosMock } from './usuarios.js'
 
 const NO_AUTORIZADO = { status: 401, datos: { mensaje: 'Tu sesión expiró. Inicia sesión de nuevo.' } }
@@ -14,8 +15,9 @@ function conRol(roles, manejador) {
   }
 }
 
-// Cada manejador recibe { cuerpo, token } y devuelve { status, datos },
+// Cada manejador recibe { cuerpo, consulta, token } y devuelve { status, datos },
 // con la misma forma que respondería la API real (ver docs/api.md).
+// `consulta` son los parámetros de la URL (?vista=activos&pagina=2) como objeto.
 const manejadores = {
   'POST /auth/login': ({ cuerpo }) => {
     const correo = String(cuerpo?.correo ?? '').trim().toLowerCase()
@@ -32,12 +34,18 @@ const manejadores = {
   },
 
   'GET /admin/resumen': conRol(['ADMIN'], () => ({ status: 200, datos: calcularResumen() })),
+
+  'GET /tickets': conRol(['ADMIN'], ({ consulta }) => ({ status: 200, datos: buscarTickets(consulta) })),
+
+  'GET /catalogos': conRol(null, () => ({ status: 200, datos: obtenerCatalogos() })),
 }
 
 export function responderMock(metodo, ruta, { cuerpo, token }) {
-  const manejador = manejadores[`${metodo} ${ruta}`]
+  const [camino, query = ''] = ruta.split('?')
+  const manejador = manejadores[`${metodo} ${camino}`]
   if (!manejador) {
-    return { status: 404, datos: { mensaje: `No hay mock para ${metodo} ${ruta}` } }
+    return { status: 404, datos: { mensaje: `No hay mock para ${metodo} ${camino}` } }
   }
-  return manejador({ cuerpo, token })
+  const consulta = Object.fromEntries(new URLSearchParams(query))
+  return manejador({ cuerpo, consulta, token })
 }

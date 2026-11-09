@@ -140,3 +140,20 @@ export function IconoPalomita(props) {
     </Icono>
   )
 }
+
+export function IconoBuscar(props) {
+  return (
+    <Icono {...props}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M20 20l-4.2-4.2" />
+    </Icono>
+  )
+}
+
+export function IconoFiltros(props) {
+  return (
+    <Icono {...props}>
+      <path d="M4 6h16M7 12h10M10 18h4" />
+    </Icono>
+  )
+}

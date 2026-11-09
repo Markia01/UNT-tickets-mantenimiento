@@ -60,7 +60,7 @@ Nunca se devuelve la contraseña.
   motivoCancelacion,  // string | null. Solo si estado = "CANCELADO"
   creadoEn,           // fecha ISO
   venceEn,            // fecha ISO = creadoEn + categoria.horasObjetivo
-  cerradoEn,          // fecha ISO | null
+  cerradoEn,          // fecha ISO | null. Cuándo dejó de estar activo: al cerrarse o al cancelarse
   historial: [        // en orden cronológico, el primero es "ABIERTO"
     { estado, usuario: { id, nombre }, comentario /* string | null */, fecha }
   ],
@@ -226,3 +226,76 @@ Respuesta `200` (los tickets de `requierenAtencion` van completos; aquí se abre
 ```
 
 Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
+
+---
+
+### `GET /tickets`
+
+Lista paginada de tickets con filtros. **Rol:** `ADMIN`.
+
+Parámetros de consulta (todos opcionales):
+
+| Parámetro | Valores | Descripción |
+| --- | --- | --- |
+| `vista` | `todos` (por defecto) · `activos` · `cerrados` | `cerrados` incluye Cerrados y Cancelados |
+| `q` | texto | Búsqueda por ID. Coincidencia exacta; se ignoran `#` y espacios (`#14` = `14`) |
+| `desde` | `YYYY-MM-DD` | Desde ese día, incluido |
+| `hasta` | `YYYY-MM-DD` | Hasta ese día, incluido |
+| `edificio` | texto | Igual a `equipo.ubicacion.edificio` (valores de `GET /catalogos`) |
+| `categoria` | id | `categoria.id` |
+| `tiempo` | `A_TIEMPO` · `POR_VENCER` · `VENCIDO` | Semáforo. Solo devuelve tickets activos |
+| `tecnico` | id de usuario · `sin` | `sin` = tickets sin técnico |
+| `pagina` | entero ≥ 1 (por defecto 1) | Si pasa de la última página, se devuelve la última |
+| `porPagina` | entero 1–50 (por defecto 10) | |
+
+Reglas:
+
+- **Fechas (`desde` / `hasta`):** días completos en hora de Nayarit (`America/Mazatlan`). Los tickets activos se comparan por `creadoEn` (fecha del reporte) y los Cerrados o Cancelados por `cerradoEn`. Así un mismo ticket cae en el mismo rango en cualquier vista.
+- **Orden:** primero los activos, por `venceEn` ascendente (los más urgentes primero); después los Cerrados y Cancelados, por `cerradoEn` descendente (los más recientes primero).
+- **`conteos`:** cuántos tickets hay en cada vista aplicando todos los filtros **excepto** `vista` y la paginación. El frontend los muestra en las pestañas.
+- Cada elemento de `datos` tiene la forma completa de Ticket.
+
+Ejemplo: `GET /tickets?vista=activos&tecnico=sin`
+
+Respuesta `200` (tickets abreviados):
+
+```json
+{
+  "datos": [
+    { "id": "14", "estado": "ABIERTO", "tecnico": null, "venceEn": "2026-11-08T15:43:00.000Z", "...": "..." },
+    { "id": "13", "estado": "ABIERTO", "tecnico": null, "venceEn": "2026-11-08T21:43:00.000Z", "...": "..." },
+    { "id": "15", "estado": "ABIERTO", "tecnico": null, "venceEn": "2026-11-11T16:43:00.000Z", "...": "..." }
+  ],
+  "total": 3,
+  "pagina": 1,
+  "porPagina": 10,
+  "conteos": { "todos": 4, "activos": 3, "cerrados": 1 }
+}
+```
+
+Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
+
+---
+
+### `GET /catalogos`
+
+Valores para llenar los filtros. **Rol:** cualquier usuario con sesión.
+
+Respuesta `200`:
+
+```json
+{
+  "edificios": ["Edificio A", "Edificio B", "Edificio C"],
+  "categorias": [
+    { "id": "c1", "nombre": "Climatización", "horasObjetivo": 48 },
+    { "id": "c2", "nombre": "Audiovisual", "horasObjetivo": 24 },
+    { "id": "c3", "nombre": "Cómputo", "horasObjetivo": 72 },
+    { "id": "c4", "nombre": "Eléctrica", "horasObjetivo": 48 },
+    { "id": "c5", "nombre": "Plomería", "horasObjetivo": 12 }
+  ]
+}
+```
+
+`edificios` va ordenado alfabéticamente.
+
+Errores: `401` sin sesión.

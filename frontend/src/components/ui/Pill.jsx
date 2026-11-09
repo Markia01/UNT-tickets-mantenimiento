@@ -27,8 +27,8 @@ const ROL = {
 const BASE = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold'
 
 // <Pill tipo="semaforo" valor="VENCIDO" />, <Pill tipo="estado" valor="EN_PROCESO" />,
-// <Pill tipo="rol" valor="TECNICO" />
-export default function Pill({ tipo, valor, className = '' }) {
+// <Pill tipo="rol" valor="TECNICO" />, <Pill tipo="neutro">Cerrado en 26 h</Pill>
+export default function Pill({ tipo, valor, className = '', children }) {
   if (tipo === 'semaforo') {
     const estilo = SEMAFORO[valor]
     if (!estilo) return null
@@ -42,6 +42,11 @@ export default function Pill({ tipo, valor, className = '' }) {
 
   if (tipo === 'estado') {
     return <span className={`${BASE} ${ESTADO[valor] ?? ''} ${className}`}>{ETIQUETA_ESTADO[valor] ?? valor}</span>
+  }
+
+  // Etiqueta gris con texto libre, p. ej. "Cerrado en 26 h"
+  if (tipo === 'neutro') {
+    return <span className={`${BASE} bg-borde text-texto-2 ${className}`}>{children}</span>
   }
 
   if (tipo === 'rol') {

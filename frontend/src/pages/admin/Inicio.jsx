@@ -8,7 +8,7 @@ import Skeleton from '../../components/ui/Skeleton.jsx'
 import StatCard from '../../components/ui/StatCard.jsx'
 import { IconoPalomita } from '../../components/layout/iconos.jsx'
 import { useDatos } from '../../hooks/useDatos.js'
-import { formatearFechaInicio } from '../../utils/fechas.js'
+import { fechaISOLocal, formatearFechaInicio, inicioDeSemana } from '../../utils/fechas.js'
 import { calcularSemaforo } from '../../utils/semaforo.js'
 import { formatearUbicacion } from '../../utils/ticket.js'
 
@@ -241,10 +241,19 @@ export default function Inicio() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard etiqueta="Activos" valor={datos.activos} a="/admin/tickets" />
-        <StatCard etiqueta="Cerrados esta semana" valor={datos.cerradosSemana} a="/admin/tickets" />
-        <StatCard etiqueta="Vencidos" valor={datos.vencidos} a="/admin/tickets" peligro={datos.vencidos > 0} />
-        <StatCard etiqueta="Sin asignar" valor={datos.sinAsignar} a="/admin/tickets" />
+        <StatCard etiqueta="Activos" valor={datos.activos} a="/admin/tickets?vista=activos" />
+        <StatCard
+          etiqueta="Cerrados esta semana"
+          valor={datos.cerradosSemana}
+          a={`/admin/tickets?vista=cerrados&desde=${fechaISOLocal(inicioDeSemana(ahora))}`}
+        />
+        <StatCard
+          etiqueta="Vencidos"
+          valor={datos.vencidos}
+          a="/admin/tickets?vista=activos&tiempo=VENCIDO"
+          peligro={datos.vencidos > 0}
+        />
+        <StatCard etiqueta="Sin asignar" valor={datos.sinAsignar} a="/admin/tickets?vista=activos&tecnico=sin" />
       </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
