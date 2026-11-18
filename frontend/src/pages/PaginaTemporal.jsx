@@ -1,5 +1,7 @@
+import PageHeader from '../components/layout/PageHeader.jsx'
+
 // Página provisional para las rutas que todavía no tienen pantalla.
-// Dentro del layout se muestra como tarjeta (el título está en la barra superior);
+// Dentro del layout muestra el encabezado de la página y una tarjeta;
 // con `pantallaCompleta` (rutas públicas o 404) se centra en toda la pantalla.
 export default function PaginaTemporal({ nombre, pantallaCompleta = false }) {
   const tarjeta = (
@@ -14,7 +16,14 @@ export default function PaginaTemporal({ nombre, pantallaCompleta = false }) {
     </section>
   )
 
-  if (!pantallaCompleta) return tarjeta
+  if (!pantallaCompleta) {
+    return (
+      <>
+        <PageHeader titulo={nombre} />
+        {tarjeta}
+      </>
+    )
+  }
 
   return <main className="flex min-h-screen items-center justify-center p-4">{tarjeta}</main>
 }

@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { getConfiguracion, getEquipos } from '../../api/equipos.js'
 import { getCatalogos } from '../../api/tickets.js'
 import { IconoBuscar, IconoEquipos, IconoMas } from '../../components/layout/iconos.jsx'
+import PageHeader from '../../components/layout/PageHeader.jsx'
 import Button from '../../components/ui/Button.jsx'
 import CampoBusqueda from '../../components/ui/CampoBusqueda.jsx'
 import Card from '../../components/ui/Card.jsx'
@@ -80,19 +81,19 @@ function TablaEquipos({ equipos, regla, estadoEnlace }) {
       <tbody>
         {equipos.map((e) => (
           <tr key={e.id} className="hover:bg-crema [&:last-child>td]:border-b-0">
-            <td className="border-b border-borde px-3 py-3">
+            <td className="border-b border-fondo px-3 py-3">
               <span className="font-semibold">{e.tipo}</span>
               {e.estado === 'BAJA' && <Pill tipo="equipo" valor="BAJA" className="ml-2" />}
             </td>
-            <td className="border-b border-borde px-3 py-3 text-texto-2">{e.descripcion}</td>
-            <td className="border-b border-borde px-3 py-3">{formatearUbicacion(e.ubicacion)}</td>
-            <td className="border-b border-borde px-3 py-3">
+            <td className="border-b border-fondo px-3 py-3 text-texto-2">{e.descripcion}</td>
+            <td className="border-b border-fondo px-3 py-3">{formatearUbicacion(e.ubicacion)}</td>
+            <td className="border-b border-fondo px-3 py-3">
               <Fallas equipo={e} regla={regla} />
             </td>
-            <td className="border-b border-borde px-3 py-3">
+            <td className="border-b border-fondo px-3 py-3">
               <UltimaFalla fecha={e.ultimaFalla} />
             </td>
-            <td className="border-b border-borde px-3 py-3 text-right">
+            <td className="border-b border-fondo px-3 py-3 text-right">
               <Link
                 to={`/admin/equipos/${e.id}`}
                 state={estadoEnlace}
@@ -149,7 +150,7 @@ function ListaCargando() {
       <div className="hidden lg:block">
         <Skeleton className="h-10 w-full rounded-lg" />
         {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="flex gap-6 border-b border-borde px-3 py-4 last:border-b-0">
+          <div key={i} className="flex gap-6 border-b border-fondo px-3 py-4 last:border-b-0">
             <Skeleton className="h-4 w-36" />
             <Skeleton className="h-4 flex-1" />
             <Skeleton className="h-4 flex-1" />
@@ -205,6 +206,8 @@ export default function Equipos() {
 
   return (
     <div className="space-y-4">
+      <PageHeader titulo="Equipos" />
+
       <section aria-label="Filtros" className="rounded-xl border border-borde bg-tarjeta p-5">
         <div className="grid gap-3 sm:grid-cols-3 lg:flex lg:items-end">
           <CampoBusqueda

@@ -69,13 +69,15 @@ async function llamarReal(metodo, ruta, cuerpo, token) {
 
 // Llama a la API (o a los mocks) y devuelve el cuerpo de la respuesta.
 // Lanza ApiError si la respuesta no es exitosa.
-export async function llamarApi(ruta, { metodo = 'GET', cuerpo } = {}) {
-  const token = localStorage.getItem(CLAVE_TOKEN)
+// `publica: true` (login, cambiar contraseña) no manda el token, así que un 401
+// significa "datos incorrectos" y nunca cierra la sesión.
+export async function llamarApi(ruta, { metodo = 'GET', cuerpo, publica = false } = {}) {
+  const token = publica ? null : localStorage.getItem(CLAVE_TOKEN)
   const { status, datos } = USAR_MOCKS
     ? await llamarMock(metodo, ruta, cuerpo, token)
     : await llamarReal(metodo, ruta, cuerpo, token)
 
-  // Solo se cierra la sesión si había una; un 401 en el login es "credenciales incorrectas"
+  // Solo se cierra la sesión si se mandó un token
   if (status === 401 && token) alNoAutorizado?.()
 
   if (status < 200 || status >= 300) {

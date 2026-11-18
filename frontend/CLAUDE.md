@@ -22,12 +22,12 @@ src/
 │   ├── tickets.js        # una función por endpoint (getTickets, asignarTecnico, ...)
 │   └── mocks/            # datos de prueba con la misma forma que la API
 ├── components/
-│   ├── ui/               # Button, Pill, Card, Field, Modal, Toast, EmptyState, Skeleton
-│   └── layout/           # AppLayout, Sidebar, Topbar (menú distinto por rol)
+│   ├── ui/               # Button, Pill, Card, Field, CampoContrasena, Modal, Toast, EmptyState, Skeleton
+│   └── layout/           # AppLayout, Sidebar (menú distinto por rol), PageHeader, PantallaAuth
 ├── context/
 │   └── AuthContext.jsx   # usuario actual, rol, token, login y logout
 ├── pages/
-│   ├── auth/             # Login, Registro
+│   ├── auth/             # Login, CambiarContrasena, Registro
 │   ├── admin/            # Inicio, Tickets, DetalleTicket, Equipos, HistorialEquipo, Usuarios, Categorias
 │   ├── reportante/       # Reportar, ReporteEnviado, MisReportes
 │   ├── tecnico/          # MisTickets, AtenderTicket
@@ -42,6 +42,7 @@ src/
 | --- | --- | --- |
 | `/login` | Iniciar sesión | público |
 | `/registro` | Crear cuenta (solo correos @utnay.edu.mx) | público |
+| `/cambiar-contrasena` | Cambiar contraseña (correo, actual y nueva) | público |
 | `/admin` | Inicio (resumen) | ADMIN |
 | `/admin/tickets` | Lista de tickets | ADMIN |
 | `/admin/tickets/:id` | Detalle del ticket | ADMIN |
@@ -64,24 +65,26 @@ Usar siempre estos nombres de Tailwind, nunca colores sueltos:
 
 | Token | Valor | Uso |
 | --- | --- | --- |
-| `negro` | #111111 | Menú lateral, barra superior, botón principal, encabezado de tablas |
-| `fondo` | #EFE7D6 | Fondo de la página |
-| `tarjeta` | #FAF5EA | Tarjetas, tablas y formularios |
+| `negro` | #111111 | Menú lateral, botón principal, botón ☰ del celular, encabezado de tablas |
+| `fondo` | #EFE7D6 | Fondo de la página y del encabezado de cada página; líneas entre filas de las tablas |
+| `tarjeta` | #FFFDF8 | Tarjetas, tablas y formularios; fondo de pestañas y botones secundarios no activos |
 | `crema` | #F3EBDA | Texto sobre negro, opción activa del menú |
 | `borde` | #DDD3BF | Bordes de tarjetas |
 | `borde-campo` | #CFC4AD | Bordes de inputs |
-| `campo` | #FFFDF8 | Fondo de inputs |
+| `campo` | #F7F2E8 | Fondo de inputs |
 | `texto-2` | #5C5547 | Texto secundario y etiquetas |
 | `peligro` | #A3231A | Errores y acciones destructivas |
 | `ok-fondo` / `ok-texto` / `ok-punto` | #D6EBD9 / #1E5E33 / #2E8B4E | Semáforo "A tiempo" |
 | `aviso-fondo` / `aviso-texto` / `aviso-punto` | #F5E3BC / #6E4300 / #D99A1E | Semáforo "Por vencer" |
 | `error-fondo` / `error-texto` / `error-punto` | #F6D9D3 / #8A1C12 / #C8372D | Semáforo "Vencido" |
 
-- Tipografía: `system-ui`. Título de la barra 20/600, título de detalle 26/700, título de tarjeta 16/600, texto 14, etiquetas de campo 12/600 en `texto-2`.
+- Tipografía: `system-ui`. Título de página 28/700 (22 en celular), título de tarjeta 16/600, texto 14, etiquetas de campo 12/600 en `texto-2`.
 - Bordes redondeados: 8 px en botones y campos, 12 px en tarjetas, completos en etiquetas (pills).
-- Layout con sesión: menú lateral negro de 240 px a toda la altura (se contrae a 72 px solo con íconos), barra superior negra con el nombre de la vista a la izquierda y el usuario (iniciales en un círculo crema) a la derecha, contenido sobre `fondo`.
-- En celular: el menú lateral se oculta tras un botón ☰ y las tablas se convierten en tarjetas.
-- Botones: alto mínimo 44 px. Principal = fondo `negro` con texto `crema`. Secundario = borde negro. Peligro = borde y texto `peligro`. Mientras se envía, el botón dice "Guardando…" y se desactiva.
+- Layout con sesión: **sin barra superior**. Menú lateral negro de 240 px, siempre visible y fijo a la altura de la ventana (`sticky`, no se contrae); arriba solo el recuadro del logo. El contenido va sobre `fondo`.
+- Encabezado de página: cada página lo pone con `<PageHeader titulo ruta etiquetas />`, sobre `fondo` y sin borde. A la izquierda el título (28/700, negro), con la ruta de navegación opcional arriba (“Tickets / #14”) y etiquetas opcionales al lado (en el detalle: “#14 · Aire acondicionado” + estado + semáforo). A la derecha, solo texto: nombre del usuario (600) y su rol debajo (12, `texto-2`). Sin menú desplegable.
+- En celular: el encabezado sigue sobre `fondo` con un botón ☰ negro (44 px, esquinas de 10 px) y el título; el ☰ abre el panel del menú con la tarjeta del usuario arriba. Las tablas se convierten en tarjetas.
+- Tablas: encabezado negro; líneas entre filas en `fondo`.
+- Botones: alto mínimo 44 px. Principal = fondo `negro` con texto `crema`. Secundario = borde negro sobre `tarjeta`. Peligro = borde y texto `peligro`. Mientras se envía, el botón dice "Guardando…" y se desactiva.
 - Campos con error: borde de 2 px `peligro` y el mensaje debajo, en rojo.
 - Avisos (toasts) arriba a la derecha durante 4 segundos: éxito en negro, error en `error-fondo`.
 - Toda lista necesita estado vacío y estado de carga (barras grises).

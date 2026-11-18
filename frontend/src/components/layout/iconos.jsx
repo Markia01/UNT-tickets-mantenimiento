@@ -116,23 +116,6 @@ export function IconoCerrarSesion(props) {
   )
 }
 
-export function IconoLlave(props) {
-  return (
-    <Icono {...props}>
-      <circle cx="8" cy="15" r="4" />
-      <path d="M11 12l9-9M17 6l3 3M15 8l2 2" />
-    </Icono>
-  )
-}
-
-export function IconoFlechaAbajo(props) {
-  return (
-    <Icono {...props}>
-      <path d="M6 9l6 6 6-6" />
-    </Icono>
-  )
-}
-
 export function IconoPalomita(props) {
   return (
     <Icono {...props}>

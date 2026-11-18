@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router'
 import AppLayout from './components/layout/AppLayout.jsx'
 import RedirigirInicio from './components/layout/RedirigirInicio.jsx'
 import RutaProtegida from './components/layout/RutaProtegida.jsx'
+import CambiarContrasena from './pages/auth/CambiarContrasena.jsx'
 import Login from './pages/auth/Login.jsx'
 import SinPermiso from './pages/errores/SinPermiso.jsx'
 import DetalleTicket from './pages/admin/DetalleTicket.jsx'
@@ -11,19 +12,16 @@ import Inicio from './pages/admin/Inicio.jsx'
 import Tickets from './pages/admin/Tickets.jsx'
 import PaginaTemporal from './pages/PaginaTemporal.jsx'
 
-// Ruta con sesión: `titulo` es el nombre que muestra la barra superior (texto o
-// función de los parámetros de la ruta). Sin `element` muestra la página temporal.
-const vista = (path, titulo, element = <PaginaTemporal nombre={titulo} />) => ({
-  path,
-  handle: { titulo },
-  element,
-})
+// Ruta con sesión. Cada página pone su propio encabezado con <PageHeader>;
+// sin `element` se muestra la página temporal con `nombre` como título.
+const vista = (path, nombre, element = <PaginaTemporal nombre={nombre} />) => ({ path, element })
 
 export const router = createBrowserRouter([
   { path: '/', element: <RedirigirInicio /> },
 
   // Públicas (fuera del layout)
   { path: '/login', element: <Login /> },
+  { path: '/cambiar-contrasena', element: <CambiarContrasena /> },
   { path: '/registro', element: <PaginaTemporal nombre="Crear cuenta" pantallaCompleta /> },
 
   // Con sesión: primero se exige sesión, luego el layout y al final el rol
@@ -38,7 +36,7 @@ export const router = createBrowserRouter([
             children: [
               vista('/admin', 'Inicio', <Inicio />),
               vista('/admin/tickets', 'Tickets', <Tickets />),
-              vista('/admin/tickets/:id', (params) => `Ticket #${params.id}`, <DetalleTicket />),
+              vista('/admin/tickets/:id', 'Detalle del ticket', <DetalleTicket />),
               vista('/admin/equipos', 'Equipos', <Equipos />),
               vista('/admin/equipos/:id', 'Historial del equipo', <HistorialEquipo />),
               vista('/admin/usuarios', 'Usuarios'),

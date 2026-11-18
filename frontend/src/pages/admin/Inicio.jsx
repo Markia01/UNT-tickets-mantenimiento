@@ -7,6 +7,7 @@ import Pill from '../../components/ui/Pill.jsx'
 import Skeleton from '../../components/ui/Skeleton.jsx'
 import StatCard from '../../components/ui/StatCard.jsx'
 import { IconoPalomita } from '../../components/layout/iconos.jsx'
+import PageHeader from '../../components/layout/PageHeader.jsx'
 import { useDatos } from '../../hooks/useDatos.js'
 import { fechaISOLocal, formatearFechaInicio, inicioDeSemana } from '../../utils/fechas.js'
 import { calcularSemaforo } from '../../utils/semaforo.js'
@@ -33,7 +34,7 @@ function RequierenAtencion({ tickets, ahora }) {
           mensaje="No hay tickets vencidos, por vencer ni sin técnico."
         />
       ) : (
-        <ul className="divide-y divide-borde">
+        <ul className="divide-y divide-fondo">
           {tickets.map((t) => (
             <li key={t.id}>
               <Link to={`/admin/tickets/${t.id}`} className={ESTILO_FILA_ENLACE}>
@@ -66,7 +67,7 @@ function ActividadReciente({ actividad, ahora }) {
       {actividad.length === 0 ? (
         <EmptyState titulo="Sin actividad todavía" mensaje="Aquí aparecerán los últimos cambios en los tickets." />
       ) : (
-        <ul className="divide-y divide-borde">
+        <ul className="divide-y divide-fondo">
           {actividad.map((a, i) => (
             <li key={`${a.ticketId}-${a.fecha}-${i}`} className="flex flex-col gap-0.5 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
               <time dateTime={a.fecha} className="w-24 shrink-0 text-xs text-texto-2">
@@ -133,7 +134,7 @@ function EquiposMasFallas({ equipos }) {
         <EmptyState titulo="Sin fallas" mensaje="Ningún equipo tiene fallas en los últimos 90 días." />
       ) : (
         <>
-          <ol className="divide-y divide-borde">
+          <ol className="divide-y divide-fondo">
             {equipos.map(({ equipo, fallas }, i) => {
               const reemplazo = fallas >= FALLAS_REEMPLAZO
               return (
@@ -220,6 +221,15 @@ function InicioCargando() {
 }
 
 export default function Inicio() {
+  return (
+    <>
+      <PageHeader titulo="Inicio" />
+      <Resumen />
+    </>
+  )
+}
+
+function Resumen() {
   const { datos, cargando, error, recibidoEn: ahora, reintentar } = useDatos(getResumen)
 
   if (cargando) return <InicioCargando />
