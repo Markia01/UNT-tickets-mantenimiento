@@ -1,9 +1,9 @@
 # Dependencias
 node_modules/
 
-# Variables de entorno (contienen contraseñas)
-.env
-.env.local
+# Variables de entorno (contienen contraseñas); .env.example sí se versiona
+.env*
+!.env.example
 
 # Fotos subidas por los usuarios
 backend/uploads/*
@@ -22,5 +22,14 @@ Thumbs.db
 .idea/
 
 # Compilados y cobertura
+/.next/
+/out/
+/build
 dist/
 coverage/
+next-env.d.ts
+*.tsbuildinfo
+
+# Vercel y certificados
+.vercel
+*.pem

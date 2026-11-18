@@ -1,12 +1,15 @@
 # Contrato de la API — Sistema de tickets de mantenimiento UTN
 
-Este documento es el acuerdo entre el frontend (`frontend/`) y el backend (`backend/`).
-Los datos de prueba del frontend (`frontend/src/api/mocks/`) usan exactamente estas formas.
+Este documento es el acuerdo entre el frontend y el backend de la app de Next.js: las pantallas
+llaman a `src/api/` y la API vive en `src/app/api/` (Route Handlers).
+Los datos de prueba del frontend (`src/api/mocks/`) usan exactamente estas formas y rutas.
 **Cada vista nueva agrega aquí sus endpoints.**
 
 ## Convenciones
 
-- **URL base:** `VITE_API_URL` (por ejemplo `http://localhost:3000/api`). Las rutas de este documento son relativas a esa base.
+- **Rutas:** la API está en la misma app que el frontend, así que todas las rutas empiezan con `/api`
+  (por ejemplo `POST /api/auth/login` → `src/app/api/auth/login/route.js`). El frontend las llama con
+  rutas relativas, sin URL base. Con `NEXT_PUBLIC_USE_MOCKS=true` responde `src/api/mocks/` en su lugar.
 - **Formato:** JSON en peticiones y respuestas (`Content-Type: application/json`).
 - **Autenticación:** después de iniciar sesión, cada petición manda el token en el encabezado
   `Authorization: Bearer <token>`.
@@ -16,7 +19,7 @@ Los datos de prueba del frontend (`frontend/src/api/mocks/`) usan exactamente es
 | Código | Cuándo |
 | --- | --- |
 | `400` | Datos inválidos |
-| `401` | Sin token, token inválido o vencido (el frontend cierra la sesión y manda a `/login`). En `POST /auth/login` y `POST /auth/cambiar-contrasena`: correo o contraseña incorrectos |
+| `401` | Sin token, token inválido o vencido (el frontend cierra la sesión y manda a `/login`). En `POST /api/auth/login` y `POST /api/auth/cambiar-contrasena`: correo o contraseña incorrectos |
 | `403` | El rol del usuario no tiene permiso para el endpoint |
 | `404` | El recurso no existe |
 | `409` | La acción no aplica al estado actual (por ejemplo, asignar un ticket cerrado) |
@@ -123,7 +126,7 @@ Ejemplo:
 ```js
 {
   id,
-  tipo,               // uno de GET /catalogos → tiposEquipo
+  tipo,               // uno de GET /api/catalogos → tiposEquipo
   descripcion,        // marca, modelo o número: "Dell OptiPlex 3080 · equipo 12"
   ubicacion: { edificio, aula },   // "Edificio B", "Aula 3" (aula = aula o espacio)
   estado,             // "ACTIVO" | "BAJA". Un equipo dado de baja conserva su historial
@@ -132,7 +135,7 @@ Ejemplo:
 }
 ```
 
-`fallas` y `ultimaFalla` se calculan; solo vienen en las respuestas de `/equipos`.
+`fallas` y `ultimaFalla` se calculan; solo vienen en las respuestas de `/api/equipos`.
 
 ### Reglas que comparten frontend y backend
 
@@ -143,13 +146,13 @@ Ejemplo:
   - *Por vencer:* queda el 25 % o menos.
   - *Vencido:* ya pasó `venceEn`.
 - **Fallas de un equipo:** tickets de ese equipo que no están `CANCELADO`.
-- **Regla de reemplazo:** 4 o más fallas en los últimos 90 días. Los valores vienen de `GET /configuracion`.
+- **Regla de reemplazo:** 4 o más fallas en los últimos 90 días. Los valores vienen de `GET /api/configuracion`.
 
 ---
 
 ## Endpoints
 
-### `POST /auth/login`
+### `POST /api/auth/login`
 
 Inicia sesión. **Rol:** público.
 
@@ -182,7 +185,7 @@ Respuesta `401`:
 
 ---
 
-### `POST /auth/cambiar-contrasena`
+### `POST /api/auth/cambiar-contrasena`
 
 Cambia la contraseña de un usuario que conoce la actual. **Rol:** público (no lleva token: se usa
 desde la pantalla `/cambiar-contrasena`, sin sesión iniciada).
@@ -216,7 +219,7 @@ Respuesta `400` (la nueva contraseña tiene menos de 8 caracteres):
 
 ---
 
-### `GET /admin/resumen`
+### `GET /api/admin/resumen`
 
 Números y listas de la pantalla de Inicio del administrador. **Rol:** `ADMIN`.
 
@@ -289,7 +292,7 @@ Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
 
 ---
 
-### `GET /tickets`
+### `GET /api/tickets`
 
 Lista paginada de tickets con filtros. **Rol:** `ADMIN`.
 
@@ -301,7 +304,7 @@ Parámetros de consulta (todos opcionales):
 | `q` | texto | Búsqueda por ID. Coincidencia exacta; se ignoran `#` y espacios (`#14` = `14`) |
 | `desde` | `YYYY-MM-DD` | Desde ese día, incluido |
 | `hasta` | `YYYY-MM-DD` | Hasta ese día, incluido |
-| `edificio` | texto | Igual a `equipo.ubicacion.edificio` (valores de `GET /catalogos`) |
+| `edificio` | texto | Igual a `equipo.ubicacion.edificio` (valores de `GET /api/catalogos`) |
 | `categoria` | id | `categoria.id` |
 | `tiempo` | `A_TIEMPO` · `POR_VENCER` · `VENCIDO` | Semáforo. Solo devuelve tickets activos |
 | `tecnico` | id de usuario · `sin` | `sin` = tickets sin técnico |
@@ -315,7 +318,7 @@ Reglas:
 - **`conteos`:** cuántos tickets hay en cada vista aplicando todos los filtros **excepto** `vista` y la paginación. El frontend los muestra en las pestañas.
 - Cada elemento de `datos` tiene la forma completa de Ticket.
 
-Ejemplo: `GET /tickets?vista=activos&tecnico=sin`
+Ejemplo: `GET /api/tickets?vista=activos&tecnico=sin`
 
 Respuesta `200` (tickets abreviados):
 
@@ -337,7 +340,7 @@ Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
 
 ---
 
-### `GET /catalogos`
+### `GET /api/catalogos`
 
 Valores para llenar los filtros. **Rol:** cualquier usuario con sesión.
 
@@ -366,7 +369,7 @@ Errores: `401` sin sesión.
 
 ---
 
-### `GET /tickets/:id`
+### `GET /api/tickets/:id`
 
 Un ticket con su forma completa. **Rol:** `ADMIN`.
 
@@ -380,7 +383,7 @@ Errores: `401` sin sesión, `403` si el rol no es `ADMIN`, `404` si no existe:
 
 ---
 
-### `GET /tecnicos`
+### `GET /api/tecnicos`
 
 Técnicos **activos** con su carga actual, para elegir a quién asignar. **Rol:** `ADMIN`.
 
@@ -399,7 +402,7 @@ Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
 
 ---
 
-### `PATCH /tickets/:id/asignar`
+### `PATCH /api/tickets/:id/asignar`
 
 Asigna o reasigna el técnico de un ticket activo. **Rol:** `ADMIN`.
 
@@ -427,7 +430,7 @@ Errores:
 
 ---
 
-### `PATCH /tickets/:id/cancelar`
+### `PATCH /api/tickets/:id/cancelar`
 
 Cancela un ticket activo. No se puede deshacer. **Rol:** `ADMIN`.
 
@@ -460,7 +463,7 @@ Errores:
 
 ---
 
-### `GET /equipos`
+### `GET /api/equipos`
 
 Lista de equipos con sus fallas. **Rol:** `ADMIN`.
 
@@ -502,7 +505,7 @@ Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
 
 ---
 
-### `GET /equipos/:id`
+### `GET /api/equipos/:id`
 
 Ficha, estadísticas y tickets de un equipo. **Rol:** `ADMIN`.
 
@@ -545,7 +548,7 @@ Errores: `401`, `403`, `404` `{ "mensaje": "Este equipo no existe." }`.
 
 ---
 
-### `POST /equipos`
+### `POST /api/equipos`
 
 Agrega un equipo (queda `ACTIVO`). **Rol:** `ADMIN`.
 
@@ -570,7 +573,7 @@ Errores:
 
 ---
 
-### `PATCH /equipos/:id`
+### `PATCH /api/equipos/:id`
 
 Edita un equipo o lo da de baja. **Rol:** `ADMIN`.
 
@@ -589,11 +592,11 @@ Los tickets del equipo muestran los datos actualizados. Dar de baja no borra su 
 
 Respuesta `200`: el Equipo actualizado.
 
-Errores: los mismos `400` y `409` que `POST /equipos` (y `400` `Estado no válido.`), `404` si no existe.
+Errores: los mismos `400` y `409` que `POST /api/equipos` (y `400` `Estado no válido.`), `404` si no existe.
 
 ---
 
-### `GET /configuracion`
+### `GET /api/configuracion`
 
 Valores configurables del sistema. **Rol:** `ADMIN`.
 

@@ -3,7 +3,7 @@
 Plataforma web para reportar fallas de infraestructura y equipo en la universidad, dar seguimiento a su atención y conservar el historial de cada equipo.
 
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-yellow)
-![Node](https://img.shields.io/badge/node-%3E%3D22.22-green)
+![Node](https://img.shields.io/badge/node-%3E%3D20.9-green)
 ![Licencia](https://img.shields.io/badge/licencia-MIT-blue)
 
 ## Problema
@@ -26,75 +26,53 @@ Hoy las fallas en aulas y equipos (aires acondicionados, proyectores, computador
 
 | Parte | Tecnología |
 | --- | --- |
-| Frontend | React + Vite (JavaScript) |
-| Estilos | Tailwind CSS v4 (`@tailwindcss/vite`) |
-| Rutas del frontend | React Router |
-| Servidor (API) | Node.js + Express |
+| Aplicación (frontend + API) | Next.js 16 con App Router (JavaScript) |
+| Estilos | Tailwind CSS v4 |
+| API | Route Handlers de Next.js (`src/app/api/`) |
 | Base de datos | MongoDB |
 | ODM | Mongoose |
 | Fotos | multer |
 
 ## Requisitos previos
 
-- [Node.js](https://nodejs.org/) 22.22 o superior (lo pide React Router)
+- [Node.js](https://nodejs.org/) 20.9 o superior (recomendado: 22)
 - Una base de datos MongoDB: un clúster gratuito en [MongoDB Atlas](https://www.mongodb.com/atlas) (recomendado) o [MongoDB Community](https://www.mongodb.com/try/download/community) instalado localmente
 - Git
 
 ## Instalación
 
-El repositorio tiene dos proyectos independientes, cada uno con su propio `package.json`: `frontend/` y `backend/`.
+El repositorio es un solo proyecto de Next.js: las pantallas y la API viven juntas en `src/`.
 
 ```bash
 # Clonar el repositorio
 git clone https://github.com/<organizacion>/utn-tickets-mantenimiento.git
 cd utn-tickets-mantenimiento
-```
 
-### Frontend
-
-```bash
-cd frontend
+# Instalar dependencias (en la raíz)
 npm install
-cp .env.example .env
-# VITE_USE_MOCKS=true usa datos de prueba; con false llama a VITE_API_URL
+
+# Variables de entorno
+cp .env.example .env.local
+# NEXT_PUBLIC_USE_MOCKS=true usa datos de prueba; con false llama a la API (/api/...)
+
+# Iniciar en modo desarrollo
 npm run dev
 ```
 
-El frontend queda disponible en `http://localhost:5173`.
+La aplicación queda disponible en `http://localhost:3000`. Usuarios de prueba (con mocks): `admin@utnay.edu.mx`, `tecnico1@utnay.edu.mx` y `docente@utnay.edu.mx`, contraseña `demo1234`.
 
-### Backend
-
-```bash
-cd backend
-npm install
-cp .env.example .env
-# Editar .env y poner la cadena de conexión en MONGODB_URI
-npm run dev
-```
-
-El backend queda disponible en `http://localhost:3000`.
+> La carpeta `backend/` es el servidor de Express anterior; se mantiene mientras la API se pasa a `src/app/api/`.
 
 ## Scripts
 
-Se ejecutan dentro de la carpeta correspondiente.
-
-**frontend/**
+Se ejecutan en la raíz.
 
 | Comando | Qué hace |
 | --- | --- |
-| `npm run dev` | Inicia Vite con recarga automática |
-| `npm run build` | Genera la versión de producción en `dist/` |
-| `npm run preview` | Sirve localmente la versión de producción |
-| `npm run lint` | Revisa el código con Oxlint |
-
-**backend/**
-
-| Comando | Qué hace |
-| --- | --- |
-| `npm run dev` | Inicia el servidor y lo reinicia al guardar cambios |
-| `npm start` | Inicia el servidor en modo producción |
-| `npm run lint` | Revisa el estilo del código con ESLint |
-| `npm run format` | Da formato al código con Prettier |
+| `npm run dev` | Inicia Next.js en modo desarrollo con recarga automática |
+| `npm run build` | Genera la versión de producción en `.next/` |
+| `npm start` | Sirve la versión de producción (después de `npm run build`) |
+| `npm run lint` | Revisa el código con ESLint |
 
 Para ver y editar los datos se recomienda [MongoDB Compass](https://www.mongodb.com/products/tools/compass).
 
@@ -110,28 +88,21 @@ Para ver y editar los datos se recomienda [MongoDB Compass](https://www.mongodb.
 ## Estructura del proyecto
 
 ```
-├── frontend/              # Interfaz web (React + Vite + Tailwind)
-│   ├── src/
-│   │   ├── api/           # Llamadas a la API y datos de prueba (mocks/)
-│   │   ├── components/    # Componentes de interfaz (ui/) y de diseño (layout/)
-│   │   ├── context/       # Sesión del usuario
-│   │   ├── pages/         # Pantallas por rol: auth, admin, reportante, tecnico, errores
-│   │   ├── routes.jsx     # Rutas de la aplicación
-│   │   └── index.css      # Tailwind y colores del proyecto
-│   └── CLAUDE.md          # Guía del frontend (estilo, rutas, glosario)
-├── backend/               # API (Node + Express + MongoDB)
-│   ├── src/
-│   │   ├── config/        # Conexión a MongoDB
-│   │   ├── models/        # Esquemas de Mongoose
-│   │   ├── routes/        # Rutas por módulo
-│   │   ├── controllers/   # Lógica de cada ruta
-│   │   ├── middlewares/   # Autenticación y permisos por rol
-│   │   ├── services/      # Cálculo de vencimientos
-│   │   ├── views/         # Plantillas EJS
-│   │   └── app.js         # Punto de entrada
-│   ├── public/            # Archivos estáticos (CSS, imágenes)
-│   └── uploads/           # Fotos subidas (no se versiona)
-└── docs/                  # Documentación y capturas
+├── src/
+│   ├── app/               # Rutas (App Router): una carpeta por página
+│   │   ├── (con-sesion)/  # Pantallas con sesión: admin, reportante y técnico
+│   │   ├── login/ …       # Pantallas públicas
+│   │   ├── api/           # API (Route Handlers) — backend
+│   │   └── globals.css    # Tailwind y colores del proyecto
+│   ├── api/               # Cliente del frontend y datos de prueba (mocks/)
+│   ├── components/        # Componentes de interfaz (ui/) y de diseño (layout/)
+│   ├── context/           # Sesión del usuario
+│   ├── hooks/  utils/     # Lógica compartida del frontend
+│   ├── models/            # Esquemas de Mongoose — backend
+│   └── lib/db.js          # Conexión a MongoDB — backend
+├── backend/               # Servidor de Express anterior (en migración a src/app/api)
+├── docs/                  # Contrato de la API (api.md) y capturas
+└── CLAUDE.md              # Guía del proyecto (estilo, rutas, glosario, quién trabaja dónde)
 ```
 
 ## Cómo contribuir
