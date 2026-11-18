@@ -1,6 +1,8 @@
 import Card from '@/components/ui/Card.jsx'
 import { formatearFechaCorta } from '@/utils/fechas.js'
 
+// Texto del siguiente paso según el estado. Cada vista puede pasar los suyos con `pasos`
+// (el reportante y el técnico lo leen de otra forma que el admin).
 const SIGUIENTE_PASO = {
   ABIERTO: 'Siguiente paso: asignar técnico',
   ASIGNADO: 'Siguiente paso: el técnico lo marca en proceso',
@@ -28,8 +30,14 @@ function titulo(entrada, indice, historial) {
 
 // Línea de tiempo del ticket. En los activos termina con un punto vacío
 // que dice cuál es el siguiente paso. `nota` se muestra debajo (ticket cerrado).
-export default function HistorialTicket({ ticket, ahora, tituloTarjeta = 'Historial del ticket', nota }) {
-  const siguiente = SIGUIENTE_PASO[ticket.estado]
+export default function HistorialTicket({
+  ticket,
+  ahora,
+  tituloTarjeta = 'Historial del ticket',
+  nota,
+  pasos = SIGUIENTE_PASO,
+}) {
+  const siguiente = pasos[ticket.estado]
   const { historial } = ticket
 
   return (

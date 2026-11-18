@@ -16,8 +16,8 @@ import { useDatos } from '@/hooks/useDatos.js'
 import { formatearFechaCompleta, formatearFechaCorta } from '@/utils/fechas.js'
 import { calcularSemaforo, esActivo } from '@/utils/semaforo.js'
 import { formatearUbicacion } from '@/utils/ticket.js'
-import HistorialTicket from './_componentes/HistorialTicket.jsx'
-import { Dato, ESTILO_ENLACE, Foto, PillTiempo } from './_componentes/piezas.jsx'
+import HistorialTicket from '@/components/tickets/HistorialTicket.jsx'
+import { Dato, ESTILO_ENLACE, Foto, PillTiempo } from '@/components/tickets/piezas.jsx'
 import SiguientePaso from './_componentes/SiguientePaso.jsx'
 
 const NOTA_CERRADO =

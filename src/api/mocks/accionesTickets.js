@@ -13,12 +13,6 @@ const NO_EXISTE = error(404, 'Este ticket no existe.')
 const persona = ({ id, nombre }) => ({ id, nombre })
 const buscar = (id) => ticketsMock.find((t) => t.id === id)
 
-// GET /api/tickets/:id
-export function obtenerTicket(id) {
-  const ticket = buscar(id)
-  return ticket ? respuesta(200, ticket) : NO_EXISTE
-}
-
 // GET /api/tecnicos → técnicos activos con su número de tickets activos
 export function listarTecnicos() {
   const tecnicos = usuariosMock

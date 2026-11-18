@@ -221,6 +221,24 @@ export function IconoPizarron(props) {
   )
 }
 
+export function IconoCamara(props) {
+  return (
+    <Icono {...props}>
+      <path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </Icono>
+  )
+}
+
+export function IconoPersonas(props) {
+  return (
+    <Icono {...props}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19a5.5 5.5 0 0111 0M16 5.5a3 3 0 010 5.5M17.5 14a5.5 5.5 0 013 5" />
+    </Icono>
+  )
+}
+
 const ICONO_POR_TIPO = {
   'Aire acondicionado': IconoAire,
   Proyector: IconoProyector,

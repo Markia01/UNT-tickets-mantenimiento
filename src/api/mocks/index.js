@@ -1,7 +1,8 @@
-import { asignarTecnico, cancelarTicket, listarTecnicos, obtenerTicket } from './accionesTickets.js'
+import { asignarTecnico, cancelarTicket, listarTecnicos } from './accionesTickets.js'
 import { calcularResumen } from './admin.js'
 import { crearEquipo, editarEquipo, listarEquipos, obtenerConfiguracion, obtenerEquipo } from './equipos.js'
 import { buscarTickets, obtenerCatalogos } from './listaTickets.js'
+import { crearReporte, listarMios, obtenerTicketPara, sumarseAReporte, ticketActivoDeEquipo } from './reportes.js'
 import { registrarUsuario, sinContrasena, usuarioDeToken, usuariosMock } from './usuarios.js'
 
 const NO_AUTORIZADO = { status: 401, datos: { mensaje: 'Tu sesión expiró. Inicia sesión de nuevo.' } }
@@ -56,7 +57,13 @@ const manejadores = {
   'GET /api/admin/resumen': conRol(['ADMIN'], () => ({ status: 200, datos: calcularResumen() })),
 
   'GET /api/tickets': conRol(['ADMIN'], ({ consulta }) => ({ status: 200, datos: buscarTickets(consulta) })),
-  'GET /api/tickets/:id': conRol(['ADMIN'], ({ params }) => obtenerTicket(params.id)),
+  // Rutas fijas antes que /api/tickets/:id (si no, ":id" atraparía "activo" y "mios")
+  'GET /api/tickets/activo': conRol(['REPORTANTE'], ({ consulta }) => ticketActivoDeEquipo(consulta)),
+  'GET /api/tickets/mios': conRol(['REPORTANTE'], ({ consulta, usuario }) => listarMios(consulta, usuario)),
+  'POST /api/tickets': conRol(['REPORTANTE'], ({ cuerpo, usuario }) => crearReporte(cuerpo, usuario)),
+  'POST /api/tickets/:id/sumarme': conRol(['REPORTANTE'], ({ params, usuario }) => sumarseAReporte(params.id, usuario)),
+  // Cualquier rol con sesión; obtenerTicketPara revisa qué tickets puede ver cada uno
+  'GET /api/tickets/:id': conRol(null, ({ params, usuario }) => obtenerTicketPara(params.id, usuario)),
   'PATCH /api/tickets/:id/asignar': conRol(['ADMIN'], ({ params, cuerpo, usuario }) =>
     asignarTecnico(params.id, cuerpo, usuario),
   ),

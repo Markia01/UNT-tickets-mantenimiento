@@ -77,5 +77,15 @@ export function obtenerCatalogos() {
   const edificios = [...new Set(equiposMock.map((e) => e.ubicacion.edificio))].sort((a, b) =>
     a.localeCompare(b, 'es'),
   )
-  return { edificios, categorias: categoriasMock, tiposEquipo: tiposEquipoMock }
+  // Equipos activos para el formulario de reporte (edificio → aula → equipo)
+  const equipos = equiposMock
+    .filter((e) => e.estado === 'ACTIVO')
+    .map(({ id, tipo, descripcion, ubicacion }) => ({ id, tipo, descripcion, ubicacion }))
+    .sort(
+      (a, b) =>
+        a.ubicacion.edificio.localeCompare(b.ubicacion.edificio, 'es') ||
+        a.ubicacion.aula.localeCompare(b.ubicacion.aula, 'es', { numeric: true }) ||
+        a.tipo.localeCompare(b.tipo, 'es'),
+    )
+  return { edificios, categorias: categoriasMock, tiposEquipo: tiposEquipoMock, equipos }
 }
