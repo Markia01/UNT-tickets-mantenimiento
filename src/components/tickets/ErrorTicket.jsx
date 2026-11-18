@@ -5,13 +5,14 @@ import EnlaceBoton from '../ui/EnlaceBoton.jsx'
 
 // Qué mostrar cuando no se pudo cargar un ticket: no existe (404), no es tuyo (403) u otro error.
 // `volver` = { href, texto } para el botón de los casos 404 y 403.
-export default function ErrorTicket({ id, error, reintentar, volver, textoAjeno }) {
+// `palabra`: cómo se le llama en esa vista ('reporte' para quien reporta, 'ticket' para el técnico).
+export default function ErrorTicket({ id, error, reintentar, volver, textoAjeno, palabra = 'reporte' }) {
   if (error.status === 404 || error.status === 403) {
     const noExiste = error.status === 404
     return (
       <Card className="mx-auto max-w-md">
         <EmptyState
-          titulo={noExiste ? 'Este reporte no existe' : 'No puedes ver este reporte'}
+          titulo={noExiste ? `Este ${palabra} no existe` : `No puedes ver este ${palabra}`}
           mensaje={noExiste ? `No encontramos el #${id}. Revisa el número.` : (textoAjeno ?? error.message)}
           accion={
             <EnlaceBoton href={volver.href} variante="secundario">
