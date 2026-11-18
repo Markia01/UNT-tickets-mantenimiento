@@ -1,8 +1,10 @@
-import { asignarTecnico, cancelarTicket, listarTecnicos, obtenerTicket } from './accionesTickets.js'
+import { asignarTecnico, cancelarTicket, listarTecnicos } from './accionesTickets.js'
 import { calcularResumen } from './admin.js'
 import { crearEquipo, editarEquipo, listarEquipos, obtenerConfiguracion, obtenerEquipo } from './equipos.js'
 import { buscarTickets, obtenerCatalogos } from './listaTickets.js'
-import { sinContrasena, usuarioDeToken, usuariosMock } from './usuarios.js'
+import { crearReporte, listarMios, obtenerTicketPara, sumarseAReporte, ticketActivoDeEquipo } from './reportes.js'
+import { cerrarTicket, listarTicketsTecnico, marcarEnProceso } from './tecnico.js'
+import { registrarUsuario, sinContrasena, usuarioDeToken, usuariosMock } from './usuarios.js'
 
 const NO_AUTORIZADO = { status: 401, datos: { mensaje: 'Tu sesión expiró. Inicia sesión de nuevo.' } }
 const SIN_PERMISO = { status: 403, datos: { mensaje: 'No tienes permiso para esta acción.' } }
@@ -36,6 +38,8 @@ const manejadores = {
     }
   },
 
+  'POST /api/auth/registro': ({ cuerpo }) => registrarUsuario(cuerpo),
+
   'POST /api/auth/cambiar-contrasena': ({ cuerpo }) => {
     const correo = String(cuerpo?.correo ?? '').trim().toLowerCase()
     const nueva = String(cuerpo?.nueva ?? '')
@@ -54,13 +58,25 @@ const manejadores = {
   'GET /api/admin/resumen': conRol(['ADMIN'], () => ({ status: 200, datos: calcularResumen() })),
 
   'GET /api/tickets': conRol(['ADMIN'], ({ consulta }) => ({ status: 200, datos: buscarTickets(consulta) })),
-  'GET /api/tickets/:id': conRol(['ADMIN'], ({ params }) => obtenerTicket(params.id)),
+  // Rutas fijas antes que /api/tickets/:id (si no, ":id" atraparía "activo" y "mios")
+  'GET /api/tickets/activo': conRol(['REPORTANTE'], ({ consulta }) => ticketActivoDeEquipo(consulta)),
+  'GET /api/tickets/mios': conRol(['REPORTANTE'], ({ consulta, usuario }) => listarMios(consulta, usuario)),
+  'POST /api/tickets': conRol(['REPORTANTE'], ({ cuerpo, usuario }) => crearReporte(cuerpo, usuario)),
+  'POST /api/tickets/:id/sumarme': conRol(['REPORTANTE'], ({ params, usuario }) => sumarseAReporte(params.id, usuario)),
+  // Cualquier rol con sesión; obtenerTicketPara revisa qué tickets puede ver cada uno
+  'GET /api/tickets/:id': conRol(null, ({ params, usuario }) => obtenerTicketPara(params.id, usuario)),
   'PATCH /api/tickets/:id/asignar': conRol(['ADMIN'], ({ params, cuerpo, usuario }) =>
     asignarTecnico(params.id, cuerpo, usuario),
   ),
   'PATCH /api/tickets/:id/cancelar': conRol(['ADMIN'], ({ params, cuerpo, usuario }) =>
     cancelarTicket(params.id, cuerpo, usuario),
   ),
+
+  'PATCH /api/tickets/:id/en-proceso': conRol(['TECNICO'], ({ params, usuario }) => marcarEnProceso(params.id, usuario)),
+  'PATCH /api/tickets/:id/cerrar': conRol(['TECNICO'], ({ params, cuerpo, usuario }) =>
+    cerrarTicket(params.id, cuerpo, usuario),
+  ),
+  'GET /api/tecnico/tickets': conRol(['TECNICO'], ({ consulta, usuario }) => listarTicketsTecnico(consulta, usuario)),
 
   'GET /api/tecnicos': conRol(['ADMIN'], () => listarTecnicos()),
 

@@ -7,11 +7,13 @@ const RETRASO_MOCKS_MS = 600
 
 export const CLAVE_TOKEN = 'token'
 
+// `datos` es el cuerpo completo de la respuesta de error (p. ej. { mensaje, ticketId } en un 409)
 export class ApiError extends Error {
-  constructor(status, mensaje) {
+  constructor(status, mensaje, datos = null) {
     super(mensaje)
     this.name = 'ApiError'
     this.status = status
+    this.datos = datos
   }
 }
 
@@ -35,14 +37,17 @@ const esperar = (ms) => new Promise((resolver) => setTimeout(resolver, ms))
 
 async function llamarMock(metodo, ruta, cuerpo, token) {
   await esperar(RETRASO_MOCKS_MS)
-  // Copia profunda para que la página no pueda modificar los datos del mock
+  // Copia profunda para que la página no pueda modificar los datos del mock.
+  // Un FormData (fotos) llega tal cual: el mock lee sus campos con .get().
   const { status, datos } = responderMock(metodo, ruta, { cuerpo, token })
   return { status, datos: datos === undefined ? null : structuredClone(datos) }
 }
 
 async function llamarReal(metodo, ruta, cuerpo, token) {
+  // FormData = multipart/form-data (fotos): el navegador pone el Content-Type con su boundary
+  const esFormulario = cuerpo instanceof FormData
   const headers = { Accept: 'application/json' }
-  if (cuerpo !== undefined) headers['Content-Type'] = 'application/json'
+  if (cuerpo !== undefined && !esFormulario) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
 
   let respuesta
@@ -50,7 +55,7 @@ async function llamarReal(metodo, ruta, cuerpo, token) {
     respuesta = await fetch(ruta, {
       method: metodo,
       headers,
-      body: cuerpo !== undefined ? JSON.stringify(cuerpo) : undefined,
+      body: cuerpo === undefined ? undefined : esFormulario ? cuerpo : JSON.stringify(cuerpo),
     })
   } catch {
     throw new ApiError(0, 'No se pudo conectar con el servidor. Inténtalo de nuevo.')
@@ -69,6 +74,8 @@ async function llamarReal(metodo, ruta, cuerpo, token) {
 }
 
 // Llama a la API (o a los mocks) y devuelve el cuerpo de la respuesta.
+// `cuerpo` puede ser un objeto (se manda como JSON) o un FormData (multipart/form-data,
+// para las fotos: campo "foto").
 // Lanza ApiError si la respuesta no es exitosa.
 // `publica: true` (login, cambiar contraseña) no manda el token, así que un 401
 // significa "datos incorrectos" y nunca cierra la sesión.
@@ -82,7 +89,7 @@ export async function llamarApi(ruta, { metodo = 'GET', cuerpo, publica = false 
   if (status === 401 && token) alNoAutorizado?.()
 
   if (status < 200 || status >= 300) {
-    throw new ApiError(status, datos?.mensaje ?? 'Ocurrió un error. Inténtalo de nuevo.')
+    throw new ApiError(status, datos?.mensaje ?? 'Ocurrió un error. Inténtalo de nuevo.', datos)
   }
   return datos
 }

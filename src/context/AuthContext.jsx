@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
-import { login as loginApi } from '../api/auth.js'
+import { login as loginApi, registrar as registrarApi } from '../api/auth.js'
 import { registrarAlNoAutorizado } from '../api/cliente.js'
 import { borrarSesion, guardarSesion, leerSesion, leerSesionServidor, suscribirSesion } from './sesionGuardada.js'
 import { AuthContext } from './useAuth.js'
@@ -14,6 +14,13 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (correo, contrasena) => {
     const { token, usuario } = await loginApi(correo, contrasena)
+    guardarSesion(token, usuario)
+    return usuario
+  }, [])
+
+  // Crea la cuenta (siempre REPORTANTE) y deja la sesión iniciada
+  const registrar = useCallback(async (datos) => {
+    const { token, usuario } = await registrarApi(datos)
     guardarSesion(token, usuario)
     return usuario
   }, [])
@@ -32,9 +39,10 @@ export function AuthProvider({ children }) {
       rol: sesion?.usuario?.rol ?? null,
       token: sesion?.token ?? null,
       login,
+      registrar,
       logout,
     }),
-    [sesion, login, logout],
+    [sesion, login, registrar, logout],
   )
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>

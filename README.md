@@ -59,7 +59,19 @@ cp .env.example .env.local
 npm run dev
 ```
 
-La aplicación queda disponible en `http://localhost:3000`. Usuarios de prueba (con mocks): `admin@utnay.edu.mx`, `tecnico1@utnay.edu.mx` y `docente@utnay.edu.mx`, contraseña `demo1234`.
+La aplicación queda disponible en `http://localhost:3000`.
+
+Usuarios de prueba (con mocks; contraseña `demo1234` para todos):
+
+| Rol | Correo | Entra a |
+| --- | --- | --- |
+| Administrador | `admin@utnay.edu.mx` | `/admin` |
+| Técnico | `tecnico1@utnay.edu.mx` · `tecnico2@utnay.edu.mx` | `/tecnico` |
+| Reportante (docente) | `docente@utnay.edu.mx` | `/reportar` |
+
+También puedes crear una cuenta de reportante en `/registro`. Con mocks, los cambios (reportes nuevos, cuentas, cierres) se guardan en memoria y se pierden al recargar la página.
+
+Para conectar la base de datos, revisa la sección "Checklist para conectar el backend" de [docs/api.md](docs/api.md).
 
 > La carpeta `backend/` es el servidor de Express anterior; se mantiene mientras la API se pasa a `src/app/api/`.
 

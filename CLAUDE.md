@@ -49,22 +49,29 @@ src/
 │   │   │   ├── equipos/        # page.jsx (lista), [id]/ (historial) y _componentes/
 │   │   │   ├── usuarios/  categorias/
 │   │   ├── (reportante)/       # layout.jsx exige REPORTANTE
-│   │   │   ├── reportar/  mis-reportes/  reportes/[id]/enviado/
-│   │   └── tecnico/            # layout.jsx exige TECNICO; page.jsx y tickets/[id]/
+│   │   │   ├── reportar/       # formulario edificio → aula → equipo, con aviso de reporte activo
+│   │   │   ├── reportes/[id]/enviado/
+│   │   │   └── mis-reportes/   # page.jsx (lista) y [id]/ (detalle de solo lectura)
+│   │   └── tecnico/            # layout.jsx exige TECNICO; page.jsx (Mis tickets) y tickets/[id]/ (con _componentes/)
 │   └── api/                    # BACKEND (Route Handlers) — no lo toca el frontend
 ├── api/                        # Cliente del frontend
 │   ├── cliente.js              # fetch a /api/... con el token JWT (o a los mocks)
-│   ├── auth.js  admin.js  tickets.js  equipos.js   # una función por endpoint
+│   ├── auth.js  admin.js  tickets.js  equipos.js  tecnico.js   # una función por endpoint
 │   └── mocks/                  # datos de prueba con la misma forma que la API
 ├── components/
-│   ├── ui/                     # Button, Pill, Card, Field, CampoContrasena, Modal, Toast, EmptyState, Skeleton...
+│   ├── ui/                     # Button, EnlaceBoton, Pill, Card, Field, Select, AreaTexto, CampoFoto,
+│   │                           # CampoContrasena, GrupoOpciones, Pestanas, Modal, ConfirmDialog, Toast,
+│   │                           # EmptyState, Skeleton...
+│   ├── tickets/                # Piezas de ticket que comparten admin, reportante y técnico:
+│   │                           # HistorialTicket, piezas (Dato, Foto, PillTiempo), ErrorTicket, MarcaSumado
 │   └── layout/                 # AppLayout, Sidebar (menú por rol), PageHeader, PantallaAuth,
 │                               # RutaProtegida, PaginaTemporal, CargandoPagina
 ├── context/
 │   ├── AuthContext.jsx         # usuario actual, rol, token, login y logout
 │   └── sesionGuardada.js       # sesión en localStorage (useSyncExternalStore)
 ├── hooks/                      # useDatos, useFiltrosUrl, useTextoDiferido
-├── utils/                      # fechas, semáforo, correo, rutaInicio, volverALista...
+├── utils/                      # fechas, semáforo, correo, foto (reglas de 5 MB), formulario (foco en el
+│                               # primer error), rutaInicio, volverALista...
 ├── models/                     # BACKEND
 └── lib/db.js                   # BACKEND
 ```
@@ -77,7 +84,7 @@ src/
 | Ruta | Archivo | Pantalla | Rol |
 | --- | --- | --- | --- |
 | `/login` | `app/login/page.jsx` | Iniciar sesión | público |
-| `/registro` | `app/registro/page.jsx` | Crear cuenta (temporal) | público |
+| `/registro` | `app/registro/page.jsx` | Crear cuenta (solo correos @utnay.edu.mx; queda como REPORTANTE) | público |
 | `/cambiar-contrasena` | `app/cambiar-contrasena/page.jsx` | Cambiar contraseña (correo, actual y nueva) | público |
 | `/admin` | `(con-sesion)/admin/page.jsx` | Inicio (resumen) | ADMIN |
 | `/admin/tickets` | `(con-sesion)/admin/tickets/page.jsx` | Lista de tickets | ADMIN |
@@ -86,11 +93,12 @@ src/
 | `/admin/equipos/[id]` | `(con-sesion)/admin/equipos/[id]/page.jsx` | Historial del equipo | ADMIN |
 | `/admin/usuarios` | `(con-sesion)/admin/usuarios/page.jsx` | Usuarios (temporal) | ADMIN |
 | `/admin/categorias` | `(con-sesion)/admin/categorias/page.jsx` | Categorías y regla de reemplazo (temporal) | ADMIN |
-| `/reportar` | `(con-sesion)/(reportante)/reportar/page.jsx` | Reportar falla (temporal) | REPORTANTE |
-| `/reportes/[id]/enviado` | `(con-sesion)/(reportante)/reportes/[id]/enviado/page.jsx` | Reporte enviado (temporal) | REPORTANTE |
-| `/mis-reportes` | `(con-sesion)/(reportante)/mis-reportes/page.jsx` | Mis reportes (temporal) | REPORTANTE |
-| `/tecnico` | `(con-sesion)/tecnico/page.jsx` | Mis tickets (temporal) | TECNICO |
-| `/tecnico/tickets/[id]` | `(con-sesion)/tecnico/tickets/[id]/page.jsx` | Atender y cerrar (temporal) | TECNICO |
+| `/reportar` | `(con-sesion)/(reportante)/reportar/page.jsx` | Reportar falla (o sumarse a un reporte activo) | REPORTANTE |
+| `/reportes/[id]/enviado` | `(con-sesion)/(reportante)/reportes/[id]/enviado/page.jsx` | Reporte enviado / Te sumaste | REPORTANTE |
+| `/mis-reportes` | `(con-sesion)/(reportante)/mis-reportes/page.jsx` | Mis reportes (propios y sumados) | REPORTANTE |
+| `/mis-reportes/[id]` | `(con-sesion)/(reportante)/mis-reportes/[id]/page.jsx` | Detalle de un reporte (solo lectura) | REPORTANTE |
+| `/tecnico` | `(con-sesion)/tecnico/page.jsx` | Mis tickets (Asignados, En proceso, Cerrados recientes) | TECNICO |
+| `/tecnico/tickets/[id]` | `(con-sesion)/tecnico/tickets/[id]/page.jsx` | Atender y cerrar | TECNICO |
 | `/403` | `app/403/page.jsx` | Sin permiso | todos |
 | cualquier otra | `app/not-found.jsx` | No encontrado (404) | todos |
 
@@ -150,12 +158,15 @@ Usar siempre estos nombres de Tailwind, nunca colores sueltos:
 - **Vence:** fecha del reporte + horas objetivo de su categoría.
 - **Semáforo** (solo tickets activos): A tiempo = queda más del 25 % del tiempo · Por vencer = 25 % o menos · Vencido = ya pasó la fecha. Siempre con texto, nunca solo color.
 - **Quién hace qué:** el admin asigna, reasigna o cancela; el técnico marca En proceso y cierra con foto obligatoria.
+- **Sumados:** personas que, en lugar de crear un reporte duplicado, se suman al reporte activo del mismo equipo ("Sumarme a este reporte"). En Mis reportes llevan la marca "Te sumaste".
+- **Fecha estimada de atención:** así se le muestra `venceEn` a quien reporta. Al técnico y al admin se les muestra como "Vence" con el semáforo.
 - **Regla de reemplazo:** 4 o más fallas en 90 días muestra el aviso en el historial del equipo.
 - No existe "prioridad".
 
 ## Datos y API
 
-- Todas las llamadas pasan por `src/api/`. Las páginas nunca usan `fetch` directamente.
+- Todas las llamadas pasan por `src/api/`. Las páginas nunca usan `fetch` directamente ni importan `src/api/mocks/`.
+- Las fotos se mandan como `multipart/form-data` (campo `foto`): las funciones de `src/api/` arman el `FormData` y `cliente.js` no le pone `Content-Type` JSON. Reglas: solo imágenes, máximo 5 MB (`utils/foto.js`).
 - La API está en la misma app: las rutas empiezan con `/api` (por ejemplo `getTickets()` llama a `GET /api/tickets`, que atiende `src/app/api/tickets/route.js`). Contrato completo en `docs/api.md`.
 - `NEXT_PUBLIC_USE_MOCKS=true` (en `.env.local`) hace que `src/api` devuelva datos de `src/api/mocks/` (con un pequeño retraso para ver el estado de carga). Con `false` llama a `/api/...`. Las variables que lee el navegador deben empezar con `NEXT_PUBLIC_`.
 - Autenticación: el backend devuelve un JWT al iniciar sesión. Se guarda en `localStorage` y se manda en `Authorization: Bearer <token>`. Si la API responde 401, se cierra la sesión y se va a `/login`.

@@ -109,6 +109,8 @@ export const ticketsMock = [
     creadoHace: 30,
     tecnico: TECNICO_1,
     asignadoHace: 28,
+    // El docente de prueba se sumó: aparece en "Mis reportes" con la marca "Te sumaste"
+    sumados: [{ id: DOCENTE.id, nombre: DOCENTE.nombre }],
   }),
   crearTicket({
     id: '13',
@@ -181,6 +183,17 @@ export const ticketsMock = [
     creadoHace: 8,
     canceladoHace: 7,
     motivoCancelacion: 'Duplicado: la misma fuga ya está reportada en el #13.',
+  }),
+
+  crearTicket({
+    id: '19',
+    equipoId: 'e10',
+    categoriaId: 'c4',
+    reporta: DOCENTE,
+    descripcion: 'No hay internet en el aula; el contacto de red de la pared no da señal.',
+    creadoHace: 3 * DIA_H,
+    canceladoHace: 3 * DIA_H - 2,
+    motivoCancelacion: 'No corresponde a mantenimiento',
   }),
 
   // ---- Cerrados ----

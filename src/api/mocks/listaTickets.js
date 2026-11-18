@@ -25,7 +25,7 @@ function compararTickets(a, b) {
   return tiempo(b.cerradoEn) - tiempo(a.cerradoEn)
 }
 
-// GET /api/api/tickets (ver docs/api.md)
+// GET /api/tickets (ver docs/api.md)
 export function buscarTickets(consulta = {}, tickets = ticketsMock, ahora = new Date()) {
   const vista = VISTAS.includes(consulta.vista) ? consulta.vista : 'todos'
   const id = String(consulta.q ?? '').replace(/[#\s]/g, '')
@@ -72,10 +72,20 @@ export function buscarTickets(consulta = {}, tickets = ticketsMock, ahora = new 
   }
 }
 
-// GET /api/api/catalogos
+// GET /api/catalogos
 export function obtenerCatalogos() {
   const edificios = [...new Set(equiposMock.map((e) => e.ubicacion.edificio))].sort((a, b) =>
     a.localeCompare(b, 'es'),
   )
-  return { edificios, categorias: categoriasMock, tiposEquipo: tiposEquipoMock }
+  // Equipos activos para el formulario de reporte (edificio → aula → equipo)
+  const equipos = equiposMock
+    .filter((e) => e.estado === 'ACTIVO')
+    .map(({ id, tipo, descripcion, ubicacion }) => ({ id, tipo, descripcion, ubicacion }))
+    .sort(
+      (a, b) =>
+        a.ubicacion.edificio.localeCompare(b.ubicacion.edificio, 'es') ||
+        a.ubicacion.aula.localeCompare(b.ubicacion.aula, 'es', { numeric: true }) ||
+        a.tipo.localeCompare(b.tipo, 'es'),
+    )
+  return { edificios, categorias: categoriasMock, tiposEquipo: tiposEquipoMock, equipos }
 }

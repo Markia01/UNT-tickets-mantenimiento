@@ -10,19 +10,26 @@ Los datos de prueba del frontend (`src/api/mocks/`) usan exactamente estas forma
 - **Rutas:** la API está en la misma app que el frontend, así que todas las rutas empiezan con `/api`
   (por ejemplo `POST /api/auth/login` → `src/app/api/auth/login/route.js`). El frontend las llama con
   rutas relativas, sin URL base. Con `NEXT_PUBLIC_USE_MOCKS=true` responde `src/api/mocks/` en su lugar.
-- **Formato:** JSON en peticiones y respuestas (`Content-Type: application/json`).
+- **Formato:** JSON en peticiones y respuestas (`Content-Type: application/json`), salvo los endpoints
+  que reciben una foto (`POST /api/tickets` y `PATCH /api/tickets/:id/cerrar`): esos reciben
+  `multipart/form-data` y la foto va en el campo **`foto`**. Las respuestas siempre son JSON.
+- **Fotos:** solo imágenes (`image/*`) de **5 MB como máximo**. El backend las guarda y en el ticket
+  devuelve su URL (`"/uploads/tickets/20-reporte.jpg"`). Si no cumple: `400` con el mensaje
+  `El archivo debe ser una imagen (JPG, PNG, HEIC…).` o `La foto pesa más de 5 MB. Toma otra o elige una más ligera.`
+- **Creación:** los `POST` que crean algo responden `201` con lo creado.
 - **Autenticación:** después de iniciar sesión, cada petición manda el token en el encabezado
   `Authorization: Bearer <token>`.
 - **Fechas:** cadenas ISO 8601 en UTC (`"2026-11-08T15:30:00.000Z"`). El frontend las muestra en hora local.
 - **Errores:** cualquier respuesta que no sea 2xx devuelve `{ "mensaje": "Texto para mostrar al usuario" }`, en español.
+  Algunos errores agregan datos (por ejemplo el `409` de `POST /api/tickets` trae `ticketId`).
 
 | Código | Cuándo |
 | --- | --- |
 | `400` | Datos inválidos |
 | `401` | Sin token, token inválido o vencido (el frontend cierra la sesión y manda a `/login`). En `POST /api/auth/login` y `POST /api/auth/cambiar-contrasena`: correo o contraseña incorrectos |
-| `403` | El rol del usuario no tiene permiso para el endpoint |
+| `403` | El rol del usuario no tiene permiso para el endpoint, o el recurso no es suyo (un técnico con un ticket que no tiene asignado, un reportante con un ticket que no reportó) |
 | `404` | El recurso no existe |
-| `409` | La acción no aplica al estado actual (por ejemplo, asignar un ticket cerrado) |
+| `409` | La acción no aplica al estado actual (por ejemplo, asignar un ticket cerrado) o crearía un duplicado (correo ya registrado, reporte de un equipo que ya tiene uno activo) |
 
 **Roles:** `ADMIN`, `TECNICO`, `REPORTANTE`.
 
@@ -43,6 +50,9 @@ Los datos de prueba del frontend (`src/api/mocks/`) usan exactamente estas forma
 ```
 
 Nunca se devuelve la contraseña. `activo: false` = usuario desactivado (no puede iniciar sesión ni recibir tickets).
+
+Los `REPORTANTE` traen además `tipo`: `"Alumno"`, `"Docente"` o `"Personal"` (lo eligen al registrarse y se
+copia en `reporta.tipo` de sus tickets).
 
 ### Ticket
 
@@ -75,9 +85,12 @@ Nunca se devuelve la contraseña. `activo: false` = usuario desactivado (no pued
       fecha
     }
   ],
-  sumados: [ { id, nombre } ]   // personas que reportaron la misma falla
+  sumados: [ { id, nombre } ]   // personas que reportaron la misma falla (POST /api/tickets/:id/sumarme)
 }
 ```
+
+En `GET /api/tickets/mios` cada ticket trae además `relacion`: `"PROPIO"` (lo reportó el usuario) o
+`"SUMADO"` (se sumó).
 
 Ejemplo:
 
@@ -219,6 +232,50 @@ Respuesta `400` (la nueva contraseña tiene menos de 8 caracteres):
 
 ---
 
+### `POST /api/auth/registro`
+
+Crea una cuenta y deja la sesión iniciada. **Rol:** público (sin token). La cuenta nueva siempre es
+`REPORTANTE`; los técnicos y administradores los da de alta mantenimiento.
+
+Petición:
+
+```json
+{ "nombre": "Ana López", "correo": "ana.lopez@utnay.edu.mx", "tipo": "Alumno", "contrasena": "clave2026" }
+```
+
+- `nombre`: mínimo 3 caracteres.
+- `correo`: termina en `@utnay.edu.mx`; se guarda sin espacios y en minúsculas.
+- `tipo`: `Alumno`, `Docente` o `Personal`.
+- `contrasena`: mínimo 8 caracteres. Se guarda cifrada.
+
+Respuesta `201` (igual que el login):
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "usuario": {
+    "id": "u20",
+    "nombre": "Ana López",
+    "correo": "ana.lopez@utnay.edu.mx",
+    "rol": "REPORTANTE",
+    "tipo": "Alumno",
+    "activo": true
+  }
+}
+```
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `400` | Nombre muy corto | `Escribe tu nombre completo.` |
+| `400` | Correo de otro dominio | `El correo debe terminar en @utnay.edu.mx` |
+| `400` | Tipo no válido | `Elige si eres alumno, docente o personal.` |
+| `400` | Contraseña corta | `La contraseña debe tener al menos 8 caracteres.` |
+| `409` | Ya hay una cuenta con ese correo | `Ya existe una cuenta con ese correo.` |
+
+---
+
 ### `GET /api/admin/resumen`
 
 Números y listas de la pantalla de Inicio del administrador. **Rol:** `ADMIN`.
@@ -342,7 +399,7 @@ Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
 
 ### `GET /api/catalogos`
 
-Valores para llenar los filtros. **Rol:** cualquier usuario con sesión.
+Valores para llenar los filtros y el formulario de reporte. **Rol:** cualquier usuario con sesión.
 
 Respuesta `200`:
 
@@ -359,11 +416,27 @@ Respuesta `200`:
     { "id": "c3", "nombre": "Cómputo", "horasObjetivo": 72 },
     { "id": "c4", "nombre": "Eléctrica", "horasObjetivo": 48 },
     { "id": "c5", "nombre": "Plomería", "horasObjetivo": 12 }
+  ],
+  "equipos": [
+    {
+      "id": "e5",
+      "tipo": "Instalación hidráulica",
+      "descripcion": "Lavabos y llaves de los baños",
+      "ubicacion": { "edificio": "Edificio A", "aula": "Baños PB" }
+    },
+    {
+      "id": "e2",
+      "tipo": "Proyector",
+      "descripcion": "Epson PowerLite X49",
+      "ubicacion": { "edificio": "Edificio A", "aula": "Aula 1" }
+    }
   ]
 }
 ```
 
-`edificios` y `tiposEquipo` van ordenados alfabéticamente.
+- `edificios` y `tiposEquipo` van ordenados alfabéticamente.
+- `equipos`: solo los `ACTIVO` (sin `estado`, `fallas` ni `ultimaFalla`), ordenados por edificio, aula y tipo.
+  El formulario de `/reportar` filtra con ellos en cascada: edificio → aula → equipo.
 
 Errores: `401` sin sesión.
 
@@ -371,15 +444,23 @@ Errores: `401` sin sesión.
 
 ### `GET /api/tickets/:id`
 
-Un ticket con su forma completa. **Rol:** `ADMIN`.
+Un ticket con su forma completa. **Rol:** cualquier usuario con sesión, con estas reglas:
+
+| Rol | Puede ver |
+| --- | --- |
+| `ADMIN` | Cualquier ticket |
+| `TECNICO` | Solo los que tiene asignados (`tecnico.id` = su id) |
+| `REPORTANTE` | Solo los que reportó (`reporta.id`) o a los que se sumó (`sumados`) |
 
 Respuesta `200`: un Ticket (ver el ejemplo en "Formas de datos").
 
-Errores: `401` sin sesión, `403` si el rol no es `ADMIN`, `404` si no existe:
+Errores:
 
-```json
-{ "mensaje": "Este ticket no existe." }
-```
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `404` | El ticket no existe (se revisa primero) | `Este ticket no existe.` |
+| `403` | Técnico con un ticket que no es suyo | `Este ticket no está asignado a ti.` |
+| `403` | Reportante con un ticket que no reportó ni al que se sumó | `No tienes permiso para ver este reporte.` |
 
 ---
 
@@ -607,3 +688,242 @@ Respuesta `200`:
 ```
 
 `reemplazo`: un equipo es candidato a reemplazo con `fallas` o más fallas en los últimos `dias` días. Se ajustará desde la pantalla Categorías.
+
+---
+
+## Endpoints de quien reporta (`REPORTANTE`)
+
+> En el backend, `/api/tickets/activo` y `/api/tickets/mios` son carpetas fijas
+> (`src/app/api/tickets/activo/route.js`, `.../mios/route.js`): Next las prefiere sobre `[id]`.
+
+### `GET /api/tickets/activo?equipoId=e5`
+
+¿El equipo ya tiene un reporte activo? Se consulta al elegir el equipo en `/reportar`, para ofrecer
+"Sumarme a este reporte" en lugar de crear un duplicado. **Rol:** `REPORTANTE`.
+
+Respuesta `200` (si hay varios activos, el más reciente por `creadoEn`):
+
+```json
+{ "ticket": { "id": "13", "estado": "ABIERTO", "descripcion": "Fuga de agua en la llave del segundo lavabo…", "sumados": [], "...": "..." } }
+```
+
+Sin reporte activo: `{ "ticket": null }`. El ticket va con su forma completa.
+
+Errores: `400` `Falta el equipo.` · `404` `Este equipo no existe.`
+
+---
+
+### `POST /api/tickets`
+
+Crea un reporte (ticket en estado `ABIERTO`). **Rol:** `REPORTANTE`.
+**Formato:** `multipart/form-data`.
+
+| Campo | Obligatorio | Descripción |
+| --- | --- | --- |
+| `equipoId` | sí | Equipo `ACTIVO` |
+| `categoriaId` | sí | Categoría (de `GET /api/catalogos`) |
+| `descripcion` | sí | De 15 a 1000 caracteres (sin contar espacios al inicio y al final) |
+| `foto` | no | Imagen de máximo 5 MB |
+| `esFallaDistinta` | no | `"true"` para crearlo aunque el equipo ya tenga un reporte activo (el usuario eligió "Es una falla distinta") |
+
+Efectos:
+
+- `reporta` = `{ id, nombre, tipo }` del usuario; `tecnico: null`; `sumados: []`.
+- `creadoEn` = ahora; `venceEn` = `creadoEn` + `categoria.horasObjetivo` horas.
+- `historial` = `[{ estado: "ABIERTO", usuario: <quien reporta>, comentario: null, fecha: creadoEn }]`.
+- `fotoReporte` = URL de la foto guardada o `null`.
+- El folio (`id`) es consecutivo.
+
+Respuesta `201`: el Ticket creado, con su forma completa. El frontend va a `/reportes/:id/enviado`.
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `400` | Equipo inexistente o dado de baja | `Elige un equipo válido.` |
+| `400` | Falta la categoría o no existe | `Elige la categoría de la falla.` |
+| `400` | Descripción corta | `Describe la falla con al menos 15 caracteres.` |
+| `400` | Descripción larga | `La descripción no puede pasar de 1000 caracteres.` |
+| `400` | Foto no válida | (ver "Fotos" en Convenciones) |
+| `409` | El equipo ya tiene un reporte activo y no vino `esFallaDistinta=true` | `Ya hay un reporte activo de este equipo (#13). Súmate a ese reporte o indica que es una falla distinta.` |
+
+El `409` trae además el folio del reporte activo:
+
+```json
+{ "mensaje": "Ya hay un reporte activo de este equipo (#13). Súmate a ese reporte o indica que es una falla distinta.", "ticketId": "13" }
+```
+
+---
+
+### `POST /api/tickets/:id/sumarme`
+
+El usuario dice que tiene la misma falla: se agrega a `sumados` del ticket. Sin cuerpo. **Rol:** `REPORTANTE`.
+
+Respuesta `200`: el Ticket actualizado. El frontend va a `/reportes/:id/enviado` ("Te sumaste al reporte").
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `404` | El ticket no existe | `Este ticket no existe.` |
+| `409` | Está Cerrado o Cancelado | `Este reporte ya no está activo; si la falla sigue, repórtala de nuevo.` |
+| `409` | Lo reportó el mismo usuario | `Tú hiciste este reporte.` |
+| `409` | Ya estaba en `sumados` | `Ya te sumaste a este reporte.` |
+
+---
+
+### `GET /api/tickets/mios`
+
+Los tickets que reportó el usuario y aquellos a los que se sumó. **Rol:** `REPORTANTE`.
+
+| Parámetro | Valores | Descripción |
+| --- | --- | --- |
+| `estado` | `todos` (por defecto) · `activos` · `cerrados` · `cancelados` | `activos` = Abierto, Asignado o En proceso |
+
+- Orden: por `creadoEn` descendente (los más recientes primero). Sin paginación.
+- Cada ticket tiene la forma completa más `relacion` (`"PROPIO"` o `"SUMADO"`).
+- `conteos`: cuántos hay en cada valor de `estado` (sin aplicar el filtro).
+
+Respuesta `200` (tickets abreviados):
+
+```json
+{
+  "datos": [
+    { "id": "12", "estado": "ASIGNADO", "relacion": "PROPIO", "...": "..." },
+    { "id": "11", "estado": "ASIGNADO", "relacion": "SUMADO", "...": "..." }
+  ],
+  "conteos": { "todos": 8, "activos": 3, "cerrados": 4, "cancelados": 1 }
+}
+```
+
+---
+
+## Endpoints del técnico (`TECNICO`)
+
+### `GET /api/tecnico/tickets`
+
+Los tickets asignados al técnico que hace la petición. **Rol:** `TECNICO`.
+
+| Parámetro | Valores | Descripción |
+| --- | --- | --- |
+| `vista` | `asignados` (por defecto) · `proceso` · `cerrados` | `asignados` = estado `ASIGNADO`; `proceso` = `EN_PROCESO`; `cerrados` = `CERRADO` con `cerradoEn` en los últimos 7 días |
+
+- Orden: `asignados` y `proceso` por `venceEn` ascendente (los más urgentes primero); `cerrados` por
+  `cerradoEn` descendente.
+- `conteos`: cuántos hay en cada vista.
+- El semáforo lo calcula el frontend (`calcularSemaforo`).
+
+Respuesta `200` (tickets abreviados):
+
+```json
+{
+  "datos": [
+    { "id": "12", "estado": "ASIGNADO", "venceEn": "2026-11-19T06:51:00.000Z", "...": "..." },
+    { "id": "9", "estado": "ASIGNADO", "venceEn": "2026-11-19T20:51:00.000Z", "...": "..." }
+  ],
+  "conteos": { "asignados": 2, "proceso": 1, "cerrados": 2 }
+}
+```
+
+---
+
+### `PATCH /api/tickets/:id/en-proceso`
+
+El técnico empieza a atender el ticket. Sin cuerpo. **Rol:** `TECNICO` (solo el asignado).
+
+Efectos: `estado` pasa a `EN_PROCESO` y se agrega al `historial`
+`{ estado: "EN_PROCESO", usuario: <técnico>, comentario: null, fecha }`.
+
+Respuesta `200`: el Ticket actualizado.
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `403` | No es el técnico asignado | `Este ticket no está asignado a ti.` |
+| `404` | El ticket no existe | `Este ticket no existe.` |
+| `409` | El estado no es `ASIGNADO` | `Solo un ticket Asignado se puede marcar en proceso.` |
+
+---
+
+### `PATCH /api/tickets/:id/cerrar`
+
+El técnico cierra el ticket con evidencia. **Rol:** `TECNICO` (solo el asignado).
+**Formato:** `multipart/form-data`.
+
+| Campo | Obligatorio | Descripción |
+| --- | --- | --- |
+| `foto` | **sí** | Foto del arreglo: imagen de máximo 5 MB |
+| `comentario` | sí | Qué se hizo, de 10 a 1000 caracteres |
+
+Efectos: `estado` = `CERRADO`, `fotoCierre` = URL de la foto, `comentarioCierre` = `comentario`,
+`cerradoEn` = ahora, y se agrega al `historial` `{ estado: "CERRADO", usuario: <técnico>, comentario, fecha }`.
+
+Respuesta `200`: el Ticket actualizado.
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `400` | No viene la foto | `La foto del arreglo es obligatoria para cerrar el ticket.` |
+| `400` | Foto no válida | (ver "Fotos" en Convenciones) |
+| `400` | Comentario corto o largo | `Escribe qué se hizo (mínimo 10 caracteres).` · `El comentario no puede pasar de 1000 caracteres.` |
+| `403` | No es el técnico asignado | `Este ticket no está asignado a ti.` |
+| `404` | El ticket no existe | `Este ticket no existe.` |
+| `409` | El estado no es `EN_PROCESO` | `Solo un ticket En proceso se puede cerrar.` |
+
+---
+
+## Checklist para conectar el backend
+
+El frontend ya llama a todos estos endpoints desde `src/api/` y los mocks (`src/api/mocks/`) responden
+con las mismas formas y errores. Para conectar la base de datos solo falta implementar cada ruta en
+`src/app/api/` (Route Handlers), con los modelos en `src/models/` y la conexión en `src/lib/db.js`.
+
+### Endpoints
+
+| ✔ | Método y ruta | Archivo sugerido | Rol |
+| --- | --- | --- | --- |
+| ☐ | `POST /api/auth/login` | `src/app/api/auth/login/route.js` | público |
+| ☐ | `POST /api/auth/registro` | `src/app/api/auth/registro/route.js` | público |
+| ☐ | `POST /api/auth/cambiar-contrasena` | `src/app/api/auth/cambiar-contrasena/route.js` | público |
+| ☐ | `GET /api/catalogos` | `src/app/api/catalogos/route.js` | con sesión |
+| ☐ | `GET /api/configuracion` | `src/app/api/configuracion/route.js` | `ADMIN` |
+| ☐ | `GET /api/admin/resumen` | `src/app/api/admin/resumen/route.js` | `ADMIN` |
+| ☐ | `GET /api/tickets` | `src/app/api/tickets/route.js` (`GET`) | `ADMIN` |
+| ☐ | `POST /api/tickets` (multipart) | `src/app/api/tickets/route.js` (`POST`) | `REPORTANTE` |
+| ☐ | `GET /api/tickets/activo?equipoId=` | `src/app/api/tickets/activo/route.js` | `REPORTANTE` |
+| ☐ | `GET /api/tickets/mios` | `src/app/api/tickets/mios/route.js` | `REPORTANTE` |
+| ☐ | `GET /api/tickets/:id` | `src/app/api/tickets/[id]/route.js` | con sesión (reglas por rol) |
+| ☐ | `POST /api/tickets/:id/sumarme` | `src/app/api/tickets/[id]/sumarme/route.js` | `REPORTANTE` |
+| ☐ | `PATCH /api/tickets/:id/asignar` | `src/app/api/tickets/[id]/asignar/route.js` | `ADMIN` |
+| ☐ | `PATCH /api/tickets/:id/cancelar` | `src/app/api/tickets/[id]/cancelar/route.js` | `ADMIN` |
+| ☐ | `PATCH /api/tickets/:id/en-proceso` | `src/app/api/tickets/[id]/en-proceso/route.js` | `TECNICO` (asignado) |
+| ☐ | `PATCH /api/tickets/:id/cerrar` (multipart) | `src/app/api/tickets/[id]/cerrar/route.js` | `TECNICO` (asignado) |
+| ☐ | `GET /api/tecnico/tickets` | `src/app/api/tecnico/tickets/route.js` | `TECNICO` |
+| ☐ | `GET /api/tecnicos` | `src/app/api/tecnicos/route.js` | `ADMIN` |
+| ☐ | `GET /api/equipos` | `src/app/api/equipos/route.js` (`GET`) | `ADMIN` |
+| ☐ | `POST /api/equipos` | `src/app/api/equipos/route.js` (`POST`) | `ADMIN` |
+| ☐ | `GET /api/equipos/:id` | `src/app/api/equipos/[id]/route.js` (`GET`) | `ADMIN` |
+| ☐ | `PATCH /api/equipos/:id` | `src/app/api/equipos/[id]/route.js` (`PATCH`) | `ADMIN` |
+
+### Reglas comunes
+
+- [ ] Leer el token de `Authorization: Bearer <token>`; sin token o inválido → `401`.
+- [ ] Revisar el rol de cada endpoint → `403`. En `GET /api/tickets/:id`, `en-proceso` y `cerrar`, revisar
+      además que el ticket sea del usuario.
+- [ ] Errores siempre como `{ "mensaje": "…" }` en español, con los textos de este documento (el
+      frontend los muestra tal cual).
+- [ ] Fotos: leer con `await request.formData()` y `formData.get('foto')`; aceptar solo `image/*` de hasta
+      5 MB; guardarlas y devolver su URL en `fotoReporte` / `fotoCierre`.
+- [ ] Fechas en ISO 8601 UTC; `venceEn` = `creadoEn` + `horasObjetivo` de la categoría.
+- [ ] Cada cambio de estado agrega una entrada al `historial`.
+- [ ] Nunca devolver la contraseña; guardarla cifrada.
+
+### Apagar los mocks
+
+1. En `.env.local` cambiar `NEXT_PUBLIC_USE_MOCKS=true` por `NEXT_PUBLIC_USE_MOCKS=false`.
+2. Reiniciar `npm run dev` (Next lee las variables `NEXT_PUBLIC_` al arrancar).
+3. Con eso `src/api/cliente.js` deja de usar `src/api/mocks/` y llama a `/api/...` de la misma app.
+   No hay que cambiar ninguna pantalla.
+4. Los mocks se pueden dejar en el repositorio para desarrollar el frontend sin base de datos.

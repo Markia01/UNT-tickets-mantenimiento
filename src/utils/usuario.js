@@ -4,6 +4,9 @@ const NOMBRE_ROL = {
   REPORTANTE: 'Reportante',
 }
 
+// Tipo de persona que reporta (registro y "reporta.tipo" del ticket)
+export const TIPOS_REPORTANTE = ['Alumno', 'Docente', 'Personal']
+
 // Nombre del rol para mostrar en la interfaz
 export function nombreRol(rol) {
   return NOMBRE_ROL[rol] ?? rol ?? ''
