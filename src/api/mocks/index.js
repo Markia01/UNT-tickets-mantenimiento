@@ -1,6 +1,8 @@
 import { asignarTecnico, cancelarTicket, listarTecnicos } from './accionesTickets.js'
 import { calcularResumen } from './admin.js'
+import { crearCategoria, editarCategoria, listarCategorias } from './categorias.js'
 import { crearEquipo, editarEquipo, listarEquipos, obtenerConfiguracion, obtenerEquipo } from './equipos.js'
+import { crearUsuario, editarUsuario, listarUsuarios, restablecerContrasena } from './gestionUsuarios.js'
 import { buscarTickets, obtenerCatalogos } from './listaTickets.js'
 import { crearReporte, listarMios, obtenerTicketPara, sumarseAReporte, ticketActivoDeEquipo } from './reportes.js'
 import { cerrarTicket, listarTicketsTecnico, marcarEnProceso } from './tecnico.js'
@@ -31,6 +33,9 @@ const manejadores = {
     )
     if (!usuario) {
       return { status: 401, datos: { mensaje: 'Correo o contraseña incorrectos' } }
+    }
+    if (!usuario.activo) {
+      return { status: 403, datos: { mensaje: 'Tu cuenta está desactivada. Pide ayuda al área de mantenimiento.' } }
     }
     return {
       status: 200,
@@ -88,6 +93,15 @@ const manejadores = {
   'PATCH /api/equipos/:id': conRol(['ADMIN'], ({ params, cuerpo }) => editarEquipo(params.id, cuerpo)),
 
   'GET /api/configuracion': conRol(['ADMIN'], () => obtenerConfiguracion()),
+
+  'GET /api/usuarios': conRol(['ADMIN'], ({ consulta }) => listarUsuarios(consulta)),
+  'POST /api/usuarios': conRol(['ADMIN'], ({ cuerpo }) => crearUsuario(cuerpo)),
+  'PATCH /api/usuarios/:id': conRol(['ADMIN'], ({ params, cuerpo, usuario }) => editarUsuario(params.id, cuerpo, usuario)),
+  'POST /api/usuarios/:id/restablecer': conRol(['ADMIN'], ({ params }) => restablecerContrasena(params.id)),
+
+  'GET /api/categorias': conRol(['ADMIN'], () => listarCategorias()),
+  'POST /api/categorias': conRol(['ADMIN'], ({ cuerpo }) => crearCategoria(cuerpo)),
+  'PATCH /api/categorias/:id': conRol(['ADMIN'], ({ params, cuerpo }) => editarCategoria(params.id, cuerpo)),
 }
 
 // "PATCH /api/tickets/:id/asignar" → { metodo, regex, nombres: ['id'], manejador }

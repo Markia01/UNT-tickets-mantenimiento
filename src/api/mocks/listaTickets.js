@@ -1,6 +1,6 @@
 import { parsearFechaLocal } from '../../utils/fechas.js'
 import { calcularSemaforo, esActivo } from '../../utils/semaforo.js'
-import { categoriasMock, equiposMock, tiposEquipoMock } from './catalogos.js'
+import { categoriasMock, copiaCategoria, equiposMock, tiposEquipoMock } from './catalogos.js'
 import { ticketsMock } from './tickets.js'
 
 const POR_PAGINA = 10
@@ -87,5 +87,10 @@ export function obtenerCatalogos() {
         a.ubicacion.aula.localeCompare(b.ubicacion.aula, 'es', { numeric: true }) ||
         a.tipo.localeCompare(b.tipo, 'es'),
     )
-  return { edificios, categorias: categoriasMock, tiposEquipo: tiposEquipoMock, equipos }
+  // Solo las categorías activas (son las que se pueden elegir al reportar), por nombre
+  const categorias = categoriasMock
+    .filter((c) => c.activa)
+    .map(copiaCategoria)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+  return { edificios, categorias, tiposEquipo: tiposEquipoMock, equipos }
 }

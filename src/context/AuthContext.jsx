@@ -25,6 +25,14 @@ export function AuthProvider({ children }) {
     return usuario
   }, [])
 
+  // Reemplaza los datos del usuario de la sesión (p. ej. si el admin se cambia el nombre)
+  const actualizarUsuario = useCallback(
+    (usuario) => {
+      if (sesion?.token) guardarSesion(sesion.token, usuario)
+    },
+    [sesion],
+  )
+
   // Si la API responde 401 se cierra la sesión; las rutas protegidas mandan a /login
   useEffect(() => {
     registrarAlNoAutorizado(logout)
@@ -41,8 +49,9 @@ export function AuthProvider({ children }) {
       login,
       registrar,
       logout,
+      actualizarUsuario,
     }),
-    [sesion, login, registrar, logout],
+    [sesion, login, registrar, logout, actualizarUsuario],
   )
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>
