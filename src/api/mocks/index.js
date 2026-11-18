@@ -2,7 +2,7 @@ import { asignarTecnico, cancelarTicket, listarTecnicos, obtenerTicket } from '.
 import { calcularResumen } from './admin.js'
 import { crearEquipo, editarEquipo, listarEquipos, obtenerConfiguracion, obtenerEquipo } from './equipos.js'
 import { buscarTickets, obtenerCatalogos } from './listaTickets.js'
-import { sinContrasena, usuarioDeToken, usuariosMock } from './usuarios.js'
+import { registrarUsuario, sinContrasena, usuarioDeToken, usuariosMock } from './usuarios.js'
 
 const NO_AUTORIZADO = { status: 401, datos: { mensaje: 'Tu sesión expiró. Inicia sesión de nuevo.' } }
 const SIN_PERMISO = { status: 403, datos: { mensaje: 'No tienes permiso para esta acción.' } }
@@ -35,6 +35,8 @@ const manejadores = {
       datos: { token: `token-de-prueba-${usuario.id}`, usuario: sinContrasena(usuario) },
     }
   },
+
+  'POST /api/auth/registro': ({ cuerpo }) => registrarUsuario(cuerpo),
 
   'POST /api/auth/cambiar-contrasena': ({ cuerpo }) => {
     const correo = String(cuerpo?.correo ?? '').trim().toLowerCase()
