@@ -3,6 +3,7 @@ import { calcularResumen } from './admin.js'
 import { crearEquipo, editarEquipo, listarEquipos, obtenerConfiguracion, obtenerEquipo } from './equipos.js'
 import { buscarTickets, obtenerCatalogos } from './listaTickets.js'
 import { crearReporte, listarMios, obtenerTicketPara, sumarseAReporte, ticketActivoDeEquipo } from './reportes.js'
+import { cerrarTicket, listarTicketsTecnico, marcarEnProceso } from './tecnico.js'
 import { registrarUsuario, sinContrasena, usuarioDeToken, usuariosMock } from './usuarios.js'
 
 const NO_AUTORIZADO = { status: 401, datos: { mensaje: 'Tu sesión expiró. Inicia sesión de nuevo.' } }
@@ -70,6 +71,12 @@ const manejadores = {
   'PATCH /api/tickets/:id/cancelar': conRol(['ADMIN'], ({ params, cuerpo, usuario }) =>
     cancelarTicket(params.id, cuerpo, usuario),
   ),
+
+  'PATCH /api/tickets/:id/en-proceso': conRol(['TECNICO'], ({ params, usuario }) => marcarEnProceso(params.id, usuario)),
+  'PATCH /api/tickets/:id/cerrar': conRol(['TECNICO'], ({ params, cuerpo, usuario }) =>
+    cerrarTicket(params.id, cuerpo, usuario),
+  ),
+  'GET /api/tecnico/tickets': conRol(['TECNICO'], ({ consulta, usuario }) => listarTicketsTecnico(consulta, usuario)),
 
   'GET /api/tecnicos': conRol(['ADMIN'], () => listarTecnicos()),
 
