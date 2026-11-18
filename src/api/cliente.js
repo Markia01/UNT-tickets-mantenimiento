@@ -1,0 +1,88 @@
+import { responderMock } from './mocks/index.js'
+
+// Next solo expone al navegador las variables que empiezan con NEXT_PUBLIC_.
+// La API vive en la misma app (src/app/api), así que las rutas son relativas: /api/...
+const USAR_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === 'true'
+const RETRASO_MOCKS_MS = 600
+
+export const CLAVE_TOKEN = 'token'
+
+export class ApiError extends Error {
+  constructor(status, mensaje) {
+    super(mensaje)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
+// AuthContext registra aquí su logout para que un 401 cierre la sesión.
+let alNoAutorizado = null
+export function registrarAlNoAutorizado(fn) {
+  alNoAutorizado = fn
+}
+
+// Arma "?a=1&b=2" omitiendo los valores vacíos
+export function aQuery(parametros = {}) {
+  const query = new URLSearchParams()
+  for (const [clave, valor] of Object.entries(parametros)) {
+    if (valor !== undefined && valor !== null && valor !== '') query.set(clave, valor)
+  }
+  const texto = query.toString()
+  return texto ? `?${texto}` : ''
+}
+
+const esperar = (ms) => new Promise((resolver) => setTimeout(resolver, ms))
+
+async function llamarMock(metodo, ruta, cuerpo, token) {
+  await esperar(RETRASO_MOCKS_MS)
+  // Copia profunda para que la página no pueda modificar los datos del mock
+  const { status, datos } = responderMock(metodo, ruta, { cuerpo, token })
+  return { status, datos: datos === undefined ? null : structuredClone(datos) }
+}
+
+async function llamarReal(metodo, ruta, cuerpo, token) {
+  const headers = { Accept: 'application/json' }
+  if (cuerpo !== undefined) headers['Content-Type'] = 'application/json'
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  let respuesta
+  try {
+    respuesta = await fetch(ruta, {
+      method: metodo,
+      headers,
+      body: cuerpo !== undefined ? JSON.stringify(cuerpo) : undefined,
+    })
+  } catch {
+    throw new ApiError(0, 'No se pudo conectar con el servidor. Inténtalo de nuevo.')
+  }
+
+  const texto = await respuesta.text()
+  let datos = null
+  if (texto) {
+    try {
+      datos = JSON.parse(texto)
+    } catch {
+      datos = { mensaje: texto }
+    }
+  }
+  return { status: respuesta.status, datos }
+}
+
+// Llama a la API (o a los mocks) y devuelve el cuerpo de la respuesta.
+// Lanza ApiError si la respuesta no es exitosa.
+// `publica: true` (login, cambiar contraseña) no manda el token, así que un 401
+// significa "datos incorrectos" y nunca cierra la sesión.
+export async function llamarApi(ruta, { metodo = 'GET', cuerpo, publica = false } = {}) {
+  const token = publica ? null : localStorage.getItem(CLAVE_TOKEN)
+  const { status, datos } = USAR_MOCKS
+    ? await llamarMock(metodo, ruta, cuerpo, token)
+    : await llamarReal(metodo, ruta, cuerpo, token)
+
+  // Solo se cierra la sesión si se mandó un token
+  if (status === 401 && token) alNoAutorizado?.()
+
+  if (status < 200 || status >= 300) {
+    throw new ApiError(status, datos?.mensaje ?? 'Ocurrió un error. Inténtalo de nuevo.')
+  }
+  return datos
+}
