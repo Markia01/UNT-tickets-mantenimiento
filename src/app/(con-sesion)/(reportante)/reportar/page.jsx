@@ -243,7 +243,7 @@ export default function Reportar() {
     setSumando(true)
     try {
       const ticket = await sumarmeAReporte(ticketActivo.id)
-      toast.exito(`Te sumaste al reporte #${ticket.id}`)
+      // La pantalla de confirmación ya lo dice; no hace falta un aviso
       router.push(`/reportes/${ticket.id}/enviado`)
     } catch (error) {
       toast.error(error.message || 'No se pudo sumar al reporte. Inténtalo de nuevo.')
@@ -272,7 +272,6 @@ export default function Reportar() {
         foto: foto?.archivo,
         esFallaDistinta: esDistinta,
       })
-      toast.exito(`Reporte #${ticket.id} enviado`)
       router.push(`/reportes/${ticket.id}/enviado`)
     } catch (error) {
       setEnviando(false)
