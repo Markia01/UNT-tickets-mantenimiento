@@ -5,7 +5,7 @@
 
 const clave = (seccion) => `lista:${seccion}`
 
-// seccion: 'tickets' | 'equipos'; consulta: "vista=activos&pagina=2" (sin "?")
+// seccion: 'tickets' | 'equipos' | 'mis-reportes' | 'tecnico'; consulta: "vista=activos&pagina=2" (sin "?")
 export function guardarLista(seccion, consulta) {
   try {
     sessionStorage.setItem(clave(seccion), consulta ? `?${consulta}` : '')
