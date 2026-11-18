@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from 'react-router'
 import { getConfiguracion, getEquipo } from '../../api/equipos.js'
 import { getCatalogos } from '../../api/tickets.js'
 import { IconoAdvertencia, IconoTickets, IconoTipoEquipo } from '../../components/layout/iconos.jsx'
+import PageHeader from '../../components/layout/PageHeader.jsx'
 import Button from '../../components/ui/Button.jsx'
 import Card from '../../components/ui/Card.jsx'
 import EmptyState from '../../components/ui/EmptyState.jsx'
@@ -17,7 +18,7 @@ import { ETIQUETA_ESTADO, formatearUbicacion } from '../../utils/ticket.js'
 import ModalEquipo from './equipos/ModalEquipo.jsx'
 
 const ESTILO_BOTON_ENLACE =
-  'inline-flex min-h-11 items-center justify-center rounded-lg border border-negro px-4 text-base font-semibold hover:bg-negro/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-negro'
+  'inline-flex min-h-11 items-center justify-center rounded-lg border border-negro bg-tarjeta px-4 text-base font-semibold hover:bg-negro/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-negro'
 
 // ---------- Celdas de la tabla de tickets ----------
 
@@ -66,7 +67,7 @@ function Ficha({ equipo, onEditar }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h2 className="text-[26px] leading-tight font-bold">{equipo.tipo}</h2>
+          <h2 className="text-xl leading-tight font-bold">{equipo.tipo}</h2>
           <Pill tipo="equipo" valor={equipo.estado} />
         </div>
         <p className="mt-1 text-texto-2">
@@ -140,7 +141,7 @@ function TicketsDelEquipo({ tickets, ahora }) {
         <tbody>
           {tickets.map((t) => (
             <tr key={t.id} className="[&:last-child>td]:border-b-0">
-              <td className="border-b border-borde px-3 py-3">
+              <td className="border-b border-fondo px-3 py-3">
                 <Link
                   to={`/admin/tickets/${t.id}`}
                   className="font-bold underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-negro"
@@ -148,19 +149,19 @@ function TicketsDelEquipo({ tickets, ahora }) {
                   #{t.id}
                 </Link>
               </td>
-              <td className="border-b border-borde px-3 py-3 whitespace-nowrap">{formatearDia(t.creadoEn)}</td>
-              <td className="max-w-xs border-b border-borde px-3 py-3">
+              <td className="border-b border-fondo px-3 py-3 whitespace-nowrap">{formatearDia(t.creadoEn)}</td>
+              <td className="max-w-xs border-b border-fondo px-3 py-3">
                 <span className="block truncate" title={t.descripcion}>
                   {t.descripcion}
                 </span>
               </td>
-              <td className="border-b border-borde px-3 py-3">
+              <td className="border-b border-fondo px-3 py-3">
                 <Tecnico ticket={t} />
               </td>
-              <td className="border-b border-borde px-3 py-3">
+              <td className="border-b border-fondo px-3 py-3">
                 <Atencion ticket={t} />
               </td>
-              <td className="border-b border-borde px-3 py-3">
+              <td className="border-b border-fondo px-3 py-3">
                 <Estado ticket={t} ahora={ahora} />
               </td>
             </tr>
@@ -198,7 +199,6 @@ function HistorialCargando() {
   return (
     <div role="status" className="space-y-6">
       <span className="sr-only">Cargando historial del equipo…</span>
-      <Skeleton className="h-3 w-48" />
       <div className="flex items-center gap-4 rounded-xl border border-borde bg-tarjeta p-5">
         <Skeleton className="size-16 rounded-xl" />
         <div className="flex-1 space-y-2">
@@ -242,35 +242,39 @@ export default function HistorialEquipo() {
 
   const [editando, setEditando] = useState(false)
 
-  if (cargando) return <HistorialCargando />
+  const titulo = 'Historial del equipo'
+  const ruta = (actual) => [{ texto: 'Equipos', a: volverA }, { texto: actual }]
 
-  if (error?.status === 404) {
+  if (cargando || error) {
     return (
-      <Card className="mx-auto max-w-md">
-        <EmptyState
-          titulo="Este equipo no existe"
-          mensaje="Puede que se haya escrito mal el enlace. Búscalo en la lista de equipos."
-          accion={
-            <Link to="/admin/equipos" className={ESTILO_BOTON_ENLACE}>
-              Ir a Equipos
-            </Link>
-          }
-        />
-      </Card>
-    )
-  }
-
-  if (error) {
-    return (
-      <Card className="mx-auto max-w-md text-center">
-        <div role="alert">
-          <p className="text-base font-semibold">No se pudo cargar el historial del equipo</p>
-          <p className="mt-1 text-texto-2">{error.message}</p>
-        </div>
-        <Button variante="secundario" className="mt-4" onClick={reintentar}>
-          Reintentar
-        </Button>
-      </Card>
+      <>
+        <PageHeader titulo={titulo} ruta={ruta(cargando ? 'Cargando…' : 'Equipo')} />
+        {cargando ? (
+          <HistorialCargando />
+        ) : error.status === 404 ? (
+          <Card className="mx-auto max-w-md">
+            <EmptyState
+              titulo="Este equipo no existe"
+              mensaje="Puede que se haya escrito mal el enlace. Búscalo en la lista de equipos."
+              accion={
+                <Link to="/admin/equipos" className={ESTILO_BOTON_ENLACE}>
+                  Ir a Equipos
+                </Link>
+              }
+            />
+          </Card>
+        ) : (
+          <Card className="mx-auto max-w-md text-center">
+            <div role="alert">
+              <p className="text-base font-semibold">No se pudo cargar el historial del equipo</p>
+              <p className="mt-1 text-texto-2">{error.message}</p>
+            </div>
+            <Button variante="secundario" className="mt-4" onClick={reintentar}>
+              Reintentar
+            </Button>
+          </Card>
+        )}
+      </>
     )
   }
 
@@ -285,22 +289,7 @@ export default function HistorialEquipo() {
 
   return (
     <div className="space-y-6">
-      <nav aria-label="Ruta de navegación">
-        <ol className="flex flex-wrap items-center gap-1 text-xs text-texto-2">
-          <li>
-            <Link
-              to={volverA}
-              className="text-negro underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-negro"
-            >
-              Equipos
-            </Link>
-          </li>
-          <li aria-current="page">
-            <span aria-hidden="true">/ </span>
-            {equipo.tipo} · {equipo.ubicacion.aula}
-          </li>
-        </ol>
-      </nav>
+      <PageHeader titulo={titulo} ruta={ruta(`${equipo.tipo} · ${equipo.ubicacion.aula}`)} />
 
       <Ficha equipo={equipo} onEditar={() => setEditando(true)} />
 

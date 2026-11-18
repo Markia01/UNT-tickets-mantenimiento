@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { getCatalogos, getTickets } from '../../api/tickets.js'
 import { IconoBuscar, IconoCerrar, IconoFiltros } from '../../components/layout/iconos.jsx'
+import PageHeader from '../../components/layout/PageHeader.jsx'
 import Button from '../../components/ui/Button.jsx'
 import CampoBusqueda from '../../components/ui/CampoBusqueda.jsx'
 import Card from '../../components/ui/Card.jsx'
@@ -69,7 +70,8 @@ function Tiempo({ ticket, ahora }) {
 
 // ---------- Filtros ----------
 
-function CamposFiltro({ filtros, actualizar, catalogos, prefijo, claseCampo = '' }) {
+// `claseFecha` y `claseCampo`: anchos de los campos en la tarjeta de escritorio
+function CamposFiltro({ filtros, actualizar, catalogos, prefijo, claseFecha = '', claseCampo = '' }) {
   const cambiar = (clave) => (e) => actualizar({ [clave]: e.target.value })
   const soloCerrados = filtros.vista === 'cerrados'
 
@@ -82,7 +84,7 @@ function CamposFiltro({ filtros, actualizar, catalogos, prefijo, claseCampo = ''
         value={filtros.desde}
         max={filtros.hasta || undefined}
         onChange={cambiar('desde')}
-        className={claseCampo}
+        className={claseFecha}
       />
       <Field
         id={`${prefijo}-hasta`}
@@ -91,7 +93,7 @@ function CamposFiltro({ filtros, actualizar, catalogos, prefijo, claseCampo = ''
         value={filtros.hasta}
         min={filtros.desde || undefined}
         onChange={cambiar('hasta')}
-        className={claseCampo}
+        className={claseFecha}
       />
       <Select
         id={`${prefijo}-edificio`}
@@ -165,7 +167,7 @@ function TablaTickets({ tickets, ahora, estadoEnlace }) {
           // La fila es "relative" y el enlace del ID se estira sobre ella (after:inset-0):
           // toda la fila abre el detalle y con teclado se llega por el enlace.
           <tr key={t.id} className="relative hover:bg-crema focus-within:bg-crema [&:last-child>td]:border-b-0">
-            <td className="border-b border-borde px-3 py-3">
+            <td className="border-b border-fondo px-3 py-3">
               <Link
                 to={`/admin/tickets/${t.id}`}
                 state={estadoEnlace}
@@ -174,14 +176,14 @@ function TablaTickets({ tickets, ahora, estadoEnlace }) {
                 #{t.id}
               </Link>
             </td>
-            <td className="border-b border-borde px-3 py-3 font-semibold">{t.equipo.tipo}</td>
-            <td className="border-b border-borde px-3 py-3">{formatearUbicacion(t.equipo.ubicacion)}</td>
-            <td className="border-b border-borde px-3 py-3">{t.categoria.nombre}</td>
-            <td className="border-b border-borde px-3 py-3">
+            <td className="border-b border-fondo px-3 py-3 font-semibold">{t.equipo.tipo}</td>
+            <td className="border-b border-fondo px-3 py-3">{formatearUbicacion(t.equipo.ubicacion)}</td>
+            <td className="border-b border-fondo px-3 py-3">{t.categoria.nombre}</td>
+            <td className="border-b border-fondo px-3 py-3">
               <TextoTecnico ticket={t} />
             </td>
-            <td className="border-b border-borde px-3 py-3">{ETIQUETA_ESTADO[t.estado]}</td>
-            <td className="border-b border-borde px-3 py-3">
+            <td className="border-b border-fondo px-3 py-3">{ETIQUETA_ESTADO[t.estado]}</td>
+            <td className="border-b border-fondo px-3 py-3">
               <Tiempo ticket={t} ahora={ahora} />
             </td>
           </tr>
@@ -258,7 +260,7 @@ function ListaCargando() {
       <div className="hidden lg:block">
         <Skeleton className="h-10 w-full rounded-lg" />
         {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="flex gap-6 border-b border-borde px-3 py-4 last:border-b-0">
+          <div key={i} className="flex gap-6 border-b border-fondo px-3 py-4 last:border-b-0">
             <Skeleton className="h-4 w-10" />
             <Skeleton className="h-4 flex-1" />
             <Skeleton className="h-4 flex-1" />
@@ -326,6 +328,8 @@ export default function Tickets() {
 
   return (
     <div className="space-y-4">
+      <PageHeader titulo="Tickets" />
+
       {/* Pestañas */}
       <div role="group" aria-label="Vista" className="grid grid-cols-3 gap-2 sm:flex">
         {VISTAS.map(({ valor, texto: etiqueta }) => {
@@ -336,7 +340,7 @@ export default function Tickets() {
               type="button"
               aria-pressed={activa}
               onClick={() => cambiarVista(valor)}
-              className={`min-h-11 rounded-full border px-4 text-sm font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-negro ${
+              className={`min-h-11 rounded-full border px-2 text-sm sm:px-4 font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-negro ${
                 activa ? 'border-negro bg-negro text-crema' : 'border-borde-campo bg-tarjeta hover:bg-campo'
               }`}
             >
@@ -358,7 +362,7 @@ export default function Tickets() {
             placeholder="Buscar por ID"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            className="min-w-0 flex-1 md:w-48 md:flex-none"
+            className="min-w-0 flex-1 md:w-44 md:flex-none"
           />
 
           <button
@@ -378,7 +382,8 @@ export default function Tickets() {
               actualizar={actualizar}
               catalogos={catalogos}
               prefijo="filtro"
-              claseCampo="w-40"
+              claseFecha="w-44 shrink-0"
+              claseCampo="min-w-28 flex-1"
             />
             <Button variante="secundario" onClick={limpiar} disabled={!hayFiltros} className="min-h-12">
               Limpiar

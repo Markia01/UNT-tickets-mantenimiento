@@ -36,6 +36,21 @@ const manejadores = {
     }
   },
 
+  'POST /auth/cambiar-contrasena': ({ cuerpo }) => {
+    const correo = String(cuerpo?.correo ?? '').trim().toLowerCase()
+    const nueva = String(cuerpo?.nueva ?? '')
+    const usuario = usuariosMock.find((u) => u.correo === correo && u.contrasena === cuerpo?.actual)
+    if (!usuario) {
+      return { status: 401, datos: { mensaje: 'La contraseña actual no es correcta' } }
+    }
+    if (nueva.length < 8) {
+      return { status: 400, datos: { mensaje: 'La nueva contraseña debe tener al menos 8 caracteres' } }
+    }
+    // Se cambia en memoria: dura hasta recargar la página
+    usuario.contrasena = nueva
+    return { status: 200, datos: { mensaje: 'Contraseña actualizada' } }
+  },
+
   'GET /admin/resumen': conRol(['ADMIN'], () => ({ status: 200, datos: calcularResumen() })),
 
   'GET /tickets': conRol(['ADMIN'], ({ consulta }) => ({ status: 200, datos: buscarTickets(consulta) })),

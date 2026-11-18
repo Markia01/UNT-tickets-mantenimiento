@@ -10,7 +10,6 @@ import {
   IconoHerramienta,
   IconoInicio,
   IconoLista,
-  IconoMenu,
   IconoReportar,
   IconoTickets,
   IconoUsuarios,
@@ -44,7 +43,7 @@ function Logo() {
 }
 
 // Opciones del menú y "Cerrar sesión". La comparten el menú de escritorio y el panel de celular.
-function ContenidoMenu({ contraido = false, onElegir, onCerrarSesion }) {
+function ContenidoMenu({ onElegir, onCerrarSesion }) {
   const { rol } = useAuth()
   const opciones = OPCIONES_POR_ROL[rol] ?? []
 
@@ -60,9 +59,8 @@ function ContenidoMenu({ contraido = false, onElegir, onCerrarSesion }) {
                 to={a}
                 end={end}
                 onClick={onElegir}
-                title={contraido ? texto : undefined}
                 className={({ isActive }) =>
-                  `${ESTILO_OPCION} ${contraido ? 'justify-center' : ''} ${
+                  `${ESTILO_OPCION} ${
                     isActive
                       ? 'bg-crema font-bold text-negro'
                       : 'text-crema/70 hover:bg-crema/10 hover:text-crema'
@@ -70,7 +68,7 @@ function ContenidoMenu({ contraido = false, onElegir, onCerrarSesion }) {
                 }
               >
                 <Icono />
-                <span className={contraido ? 'sr-only' : 'truncate'}>{texto}</span>
+                <span className="truncate">{texto}</span>
               </NavLink>
             </li>
           ))}
@@ -81,29 +79,12 @@ function ContenidoMenu({ contraido = false, onElegir, onCerrarSesion }) {
         <button
           type="button"
           onClick={onCerrarSesion}
-          title={contraido ? 'Cerrar sesión' : undefined}
-          className={`${ESTILO_OPCION} w-full text-crema/70 hover:bg-crema/10 hover:text-crema ${
-            contraido ? 'justify-center' : ''
-          }`}
+          className={`${ESTILO_OPCION} w-full text-crema/70 hover:bg-crema/10 hover:text-crema`}
         >
           <IconoCerrarSesion />
-          <span className={contraido ? 'sr-only' : ''}>Cerrar sesión</span>
+          <span>Cerrar sesión</span>
         </button>
-        <p
-          className={`mt-3 border-t border-crema/15 pt-3 text-xs text-crema/50 ${
-            contraido ? 'text-center' : 'px-3'
-          }`}
-        >
-          {contraido ? (
-            <>
-              UTN
-              <br />
-              2026
-            </>
-          ) : (
-            'UTN · 2026'
-          )}
-        </p>
+        <p className="mt-3 border-t border-crema/15 px-3 pt-3 text-xs text-crema/50">UTN · 2026</p>
       </div>
     </>
   )
@@ -177,36 +158,19 @@ function PanelMovil({ abierto, onCerrar, onCerrarSesion }) {
   )
 }
 
-export default function Sidebar({
-  contraido,
-  onAlternarContraido,
-  movilAbierto,
-  onCerrarMovil,
-  onCerrarSesion,
-}) {
+// Menú lateral de escritorio: siempre 240 px y fijo a la altura de la ventana
+// (el contenido se desplaza y el menú no). En celular se usa el panel de arriba.
+export default function Sidebar({ movilAbierto, onCerrarMovil, onCerrarSesion }) {
   return (
     <>
       <aside
         id="menu-lateral"
-        className={`sticky top-0 hidden h-dvh max-h-dvh shrink-0 flex-col overflow-hidden bg-negro text-crema transition-[width] duration-200 motion-reduce:transition-none md:flex ${
-          contraido ? 'w-[72px]' : 'w-60'
-        }`}
+        className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col overflow-hidden bg-negro text-crema md:flex"
       >
-        <div className="flex shrink-0 items-center gap-3 px-3 pt-4">
-          {!contraido && <Logo />}
-          <button
-            type="button"
-            onClick={onAlternarContraido}
-            aria-label={contraido ? 'Expandir menú' : 'Contraer menú'}
-            aria-expanded={!contraido}
-            aria-controls="menu-lateral"
-            title={contraido ? 'Expandir menú' : 'Contraer menú'}
-            className="flex size-11 shrink-0 items-center justify-center rounded-lg text-crema hover:bg-crema/10 focus-visible:outline-2 focus-visible:outline-crema"
-          >
-            <IconoMenu />
-          </button>
+        <div className="flex shrink-0 px-3 pt-4">
+          <Logo />
         </div>
-        <ContenidoMenu contraido={contraido} onCerrarSesion={onCerrarSesion} />
+        <ContenidoMenu onCerrarSesion={onCerrarSesion} />
       </aside>
 
       <PanelMovil abierto={movilAbierto} onCerrar={onCerrarMovil} onCerrarSesion={onCerrarSesion} />

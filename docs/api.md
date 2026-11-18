@@ -16,7 +16,7 @@ Los datos de prueba del frontend (`frontend/src/api/mocks/`) usan exactamente es
 | Código | Cuándo |
 | --- | --- |
 | `400` | Datos inválidos |
-| `401` | Sin token, token inválido o vencido (el frontend cierra la sesión y manda a `/login`). En `POST /auth/login`: correo o contraseña incorrectos |
+| `401` | Sin token, token inválido o vencido (el frontend cierra la sesión y manda a `/login`). En `POST /auth/login` y `POST /auth/cambiar-contrasena`: correo o contraseña incorrectos |
 | `403` | El rol del usuario no tiene permiso para el endpoint |
 | `404` | El recurso no existe |
 | `409` | La acción no aplica al estado actual (por ejemplo, asignar un ticket cerrado) |
@@ -178,6 +178,40 @@ Respuesta `401`:
 
 ```json
 { "mensaje": "Correo o contraseña incorrectos" }
+```
+
+---
+
+### `POST /auth/cambiar-contrasena`
+
+Cambia la contraseña de un usuario que conoce la actual. **Rol:** público (no lleva token: se usa
+desde la pantalla `/cambiar-contrasena`, sin sesión iniciada).
+
+Petición:
+
+```json
+{ "correo": "admin@utnay.edu.mx", "actual": "demo1234", "nueva": "nuevaClave2026" }
+```
+
+- `correo`: correo institucional (`@utnay.edu.mx`), en minúsculas.
+- `nueva`: mínimo 8 caracteres.
+
+Respuesta `200`:
+
+```json
+{ "mensaje": "Contraseña actualizada" }
+```
+
+Respuesta `401` (el correo no existe o la contraseña actual no coincide; no se distingue cuál):
+
+```json
+{ "mensaje": "La contraseña actual no es correcta" }
+```
+
+Respuesta `400` (la nueva contraseña tiene menos de 8 caracteres):
+
+```json
+{ "mensaje": "La nueva contraseña debe tener al menos 8 caracteres" }
 ```
 
 ---

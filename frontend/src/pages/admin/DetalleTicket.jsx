@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
 import { getTicket } from '../../api/tickets.js'
+import PageHeader from '../../components/layout/PageHeader.jsx'
 import Button from '../../components/ui/Button.jsx'
 import Card from '../../components/ui/Card.jsx'
 import EmptyState from '../../components/ui/EmptyState.jsx'
@@ -21,38 +22,6 @@ const textoSumados = (n) =>
   n === 1 ? '1 persona más reportó esta falla' : `${n} personas más reportaron esta falla`
 
 // ---------- Piezas de la página ----------
-
-function Encabezado({ ticket, ahora, volverA, refTitulo }) {
-  return (
-    <header className="space-y-3">
-      <nav aria-label="Ruta de navegación">
-        <ol className="flex items-center gap-1 text-xs text-texto-2">
-          <li>
-            <Link
-              to={volverA}
-              className="text-negro underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-negro"
-            >
-              Tickets
-            </Link>
-          </li>
-          <li aria-current="page">
-            <span aria-hidden="true">/ </span>#{ticket.id}
-          </li>
-        </ol>
-      </nav>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* tabIndex -1: tras cancelar, el foco vuelve aquí en lugar de perderse */}
-        <h2 ref={refTitulo} tabIndex={-1} className="text-[26px] leading-tight font-bold focus:outline-none">
-          {ticket.equipo.tipo}
-        </h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <Pill tipo="estado" valor={ticket.estado} />
-          <PillTiempo ticket={ticket} ahora={ahora} />
-        </div>
-      </div>
-    </header>
-  )
-}
 
 function FranjaCancelado({ ticket, ahora }) {
   const entrada = ticket.historial.findLast((e) => e.estado === 'CANCELADO')
@@ -178,11 +147,6 @@ function DetalleCargando() {
   return (
     <div role="status" className="space-y-4">
       <span className="sr-only">Cargando ticket…</span>
-      <Skeleton className="h-3 w-24" />
-      <div className="flex items-center justify-between gap-3">
-        <Skeleton className="h-7 w-64" />
-        <Skeleton className="h-6 w-40 rounded-full" />
-      </div>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-4 rounded-xl border border-borde bg-tarjeta p-5">
           <Skeleton className="h-4 w-32" />
@@ -204,6 +168,42 @@ function DetalleCargando() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Carga, ticket inexistente o error al cargar
+function SinTicket({ id, cargando, error, reintentar }) {
+  if (cargando) return <DetalleCargando />
+
+  if (error.status === 404) {
+    return (
+      <Card className="mx-auto max-w-md">
+        <EmptyState
+          titulo="Este ticket no existe"
+          mensaje={`No encontramos el ticket #${id}. Revisa el número o búscalo en la lista.`}
+          accion={
+            <Link
+              to="/admin/tickets"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-negro bg-tarjeta px-4 text-base font-semibold hover:bg-negro/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-negro"
+            >
+              Ir a la lista de tickets
+            </Link>
+          }
+        />
+      </Card>
+    )
+  }
+
+  return (
+    <Card className="mx-auto max-w-md text-center">
+      <div role="alert">
+        <p className="text-base font-semibold">No se pudo cargar el ticket</p>
+        <p className="mt-1 text-texto-2">{error.message}</p>
+      </div>
+      <Button variante="secundario" className="mt-4" onClick={reintentar}>
+        Reintentar
+      </Button>
+    </Card>
   )
 }
 
@@ -231,42 +231,31 @@ export default function DetalleTicket() {
     [reemplazar],
   )
 
-  if (cargando) return <DetalleCargando />
+  const ruta = [{ texto: 'Tickets', a: volverA }, { texto: `#${id}` }]
 
-  if (error?.status === 404) {
+  // Mientras carga o si falla, el encabezado muestra solo el número del ticket
+  if (cargando || error) {
     return (
-      <Card className="mx-auto max-w-md">
-        <EmptyState
-          titulo="Este ticket no existe"
-          mensaje={`No encontramos el ticket #${id}. Revisa el número o búscalo en la lista.`}
-          accion={
-            <Link
-              to="/admin/tickets"
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-negro px-4 text-base font-semibold hover:bg-negro/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-negro"
-            >
-              Ir a la lista de tickets
-            </Link>
-          }
-        />
-      </Card>
+      <>
+        <PageHeader titulo={`Ticket #${id}`} ruta={ruta} />
+        <SinTicket id={id} cargando={cargando} error={error} reintentar={reintentar} />
+      </>
     )
   }
 
-  if (error) {
-    return (
-      <Card className="mx-auto max-w-md text-center">
-        <div role="alert">
-          <p className="text-base font-semibold">No se pudo cargar el ticket</p>
-          <p className="mt-1 text-texto-2">{error.message}</p>
-        </div>
-        <Button variante="secundario" className="mt-4" onClick={reintentar}>
-          Reintentar
-        </Button>
-      </Card>
-    )
-  }
-
-  const encabezado = <Encabezado ticket={ticket} ahora={ahora} volverA={volverA} refTitulo={refTitulo} />
+  const encabezado = (
+    <PageHeader
+      titulo={`#${ticket.id} · ${ticket.equipo.tipo}`}
+      ruta={ruta}
+      refTitulo={refTitulo}
+      etiquetas={
+        <>
+          <Pill tipo="estado" valor={ticket.estado} />
+          <PillTiempo ticket={ticket} ahora={ahora} />
+        </>
+      }
+    />
+  )
 
   if (ticket.estado === 'CERRADO') {
     return (
