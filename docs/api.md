@@ -49,7 +49,8 @@ Los datos de prueba del frontend (`src/api/mocks/`) usan exactamente estas forma
 }
 ```
 
-Nunca se devuelve la contraseña. `activo: false` = usuario desactivado (no puede iniciar sesión ni recibir tickets).
+Nunca se devuelve la contraseña. `activo: false` = usuario desactivado: no puede iniciar sesión (`403` en el
+login), su token deja de valer (`401` en cualquier endpoint) y no aparece en `GET /api/tecnicos`.
 
 Los `REPORTANTE` traen además `tipo`: `"Alumno"`, `"Docente"` o `"Personal"` (lo eligen al registrarse y se
 copia en `reporta.tipo` de sus tickets).
@@ -66,7 +67,7 @@ copia en `reporta.tipo` de sus tickets).
     ubicacion: { edificio, aula },
     estado            // "ACTIVO" | "BAJA"
   },
-  categoria: { id, nombre, horasObjetivo },   // horasObjetivo: número de horas para atenderlo
+  categoria: { id, nombre, horasObjetivo },   // copia de la categoría al crear el ticket (ver "Categoría")
   reporta: { id, nombre, tipo },              // tipo: "Alumno" | "Docente" | "Personal"
   tecnico: { id, nombre } | null,             // null = sin técnico
   fotoReporte,        // string (URL) | null
@@ -134,6 +135,19 @@ Ejemplo:
 }
 ```
 
+### Categoría
+
+```json
+{ "id": "c1", "nombre": "Climatización", "horasObjetivo": 48, "activa": true }
+```
+
+- `horasObjetivo`: entero mayor que 0. Horas para atender un ticket de esa categoría (`venceEn = creadoEn + horasObjetivo`).
+- `activa: false` = ya no se puede elegir al reportar (no sale en `GET /api/catalogos` y `POST /api/tickets` la rechaza).
+  Sus tickets se conservan. Las categorías **no se borran**.
+- En `GET /api/categorias` cada una trae además `ticketsActivos` (número de tickets activos con esa categoría).
+- **Cada ticket guarda una copia** de `{ id, nombre, horasObjetivo }` al crearse. Editar la categoría después
+  solo afecta a los tickets nuevos: los existentes conservan su nombre, sus horas y su `venceEn`.
+
 ### Equipo
 
 ```js
@@ -194,6 +208,12 @@ Respuesta `401`:
 
 ```json
 { "mensaje": "Correo o contraseña incorrectos" }
+```
+
+Respuesta `403` (la contraseña es correcta pero el usuario está desactivado):
+
+```json
+{ "mensaje": "Tu cuenta está desactivada. Pide ayuda al área de mantenimiento." }
 ```
 
 ---
@@ -411,8 +431,8 @@ Respuesta `200`:
     "Instalación hidráulica", "Luminaria", "Pizarrón", "Proyector"
   ],
   "categorias": [
-    { "id": "c1", "nombre": "Climatización", "horasObjetivo": 48 },
     { "id": "c2", "nombre": "Audiovisual", "horasObjetivo": 24 },
+    { "id": "c1", "nombre": "Climatización", "horasObjetivo": 48 },
     { "id": "c3", "nombre": "Cómputo", "horasObjetivo": 72 },
     { "id": "c4", "nombre": "Eléctrica", "horasObjetivo": 48 },
     { "id": "c5", "nombre": "Plomería", "horasObjetivo": 12 }
@@ -435,6 +455,8 @@ Respuesta `200`:
 ```
 
 - `edificios` y `tiposEquipo` van ordenados alfabéticamente.
+- `categorias`: solo las **activas** (sin `activa` ni `ticketsActivos`), ordenadas por nombre. Las inactivas
+  están en `GET /api/categorias` (el filtro de categoría de `/admin/tickets` usa esa, para poder buscar sus tickets).
 - `equipos`: solo los `ACTIVO` (sin `estado`, `fallas` ni `ultimaFalla`), ordenados por edificio, aula y tipo.
   El formulario de `/reportar` filtra con ellos en cascada: edificio → aula → equipo.
 
@@ -721,7 +743,7 @@ Crea un reporte (ticket en estado `ABIERTO`). **Rol:** `REPORTANTE`.
 | Campo | Obligatorio | Descripción |
 | --- | --- | --- |
 | `equipoId` | sí | Equipo `ACTIVO` |
-| `categoriaId` | sí | Categoría (de `GET /api/catalogos`) |
+| `categoriaId` | sí | Categoría **activa** (de `GET /api/catalogos`) |
 | `descripcion` | sí | De 15 a 1000 caracteres (sin contar espacios al inicio y al final) |
 | `foto` | no | Imagen de máximo 5 MB |
 | `esFallaDistinta` | no | `"true"` para crearlo aunque el equipo ya tenga un reporte activo (el usuario eligió "Es una falla distinta") |
@@ -729,6 +751,7 @@ Crea un reporte (ticket en estado `ABIERTO`). **Rol:** `REPORTANTE`.
 Efectos:
 
 - `reporta` = `{ id, nombre, tipo }` del usuario; `tecnico: null`; `sumados: []`.
+- `categoria` = copia de `{ id, nombre, horasObjetivo }` de la categoría en ese momento.
 - `creadoEn` = ahora; `venceEn` = `creadoEn` + `categoria.horasObjetivo` horas.
 - `historial` = `[{ estado: "ABIERTO", usuario: <quien reporta>, comentario: null, fecha: creadoEn }]`.
 - `fotoReporte` = URL de la foto guardada o `null`.
@@ -741,7 +764,7 @@ Errores:
 | Código | Cuándo | `mensaje` |
 | --- | --- | --- |
 | `400` | Equipo inexistente o dado de baja | `Elige un equipo válido.` |
-| `400` | Falta la categoría o no existe | `Elige la categoría de la falla.` |
+| `400` | Falta la categoría, no existe o está inactiva | `Elige la categoría de la falla.` |
 | `400` | Descripción corta | `Describe la falla con al menos 15 caracteres.` |
 | `400` | Descripción larga | `La descripción no puede pasar de 1000 caracteres.` |
 | `400` | Foto no válida | (ver "Fotos" en Convenciones) |
@@ -874,6 +897,186 @@ Errores:
 
 ---
 
+## Endpoints de administración (`ADMIN`)
+
+### `GET /api/usuarios`
+
+Todos los usuarios (activos e inactivos), para la pantalla Usuarios. **Rol:** `ADMIN`.
+
+| Parámetro | Valores | Descripción |
+| --- | --- | --- |
+| `q` | texto | Busca en `nombre` y `correo`; no distingue mayúsculas ni acentos |
+| `rol` | `ADMIN` · `TECNICO` · `REPORTANTE` | Igual a `rol`. Otro valor se ignora |
+
+Orden: por `nombre`. Sin paginación. Cada elemento tiene la forma de Usuario (los `REPORTANTE` con `tipo`).
+
+Respuesta `200`:
+
+```json
+[
+  { "id": "u5", "nombre": "[ALUMNO 1]", "correo": "alumno1@utnay.edu.mx", "rol": "REPORTANTE", "tipo": "Alumno", "activo": true },
+  { "id": "u1", "nombre": "Administración de Mantenimiento", "correo": "admin@utnay.edu.mx", "rol": "ADMIN", "activo": true },
+  { "id": "u9", "nombre": "[TÉCNICO 3]", "correo": "tecnico3@utnay.edu.mx", "rol": "TECNICO", "activo": false }
+]
+```
+
+Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
+
+---
+
+### `POST /api/usuarios`
+
+Da de alta a un técnico o administrador. Los reportantes no se crean aquí: se registran solos
+(`POST /api/auth/registro`). **Rol:** `ADMIN`.
+
+Petición:
+
+```json
+{ "nombre": "Ana Ruiz", "correo": "ana.ruiz@utnay.edu.mx", "rol": "TECNICO" }
+```
+
+- `nombre`: de 3 a 80 caracteres (se recortan los espacios de los extremos y los dobles).
+- `correo`: termina en `@utnay.edu.mx`; se guarda sin espacios y en minúsculas.
+- `rol`: `TECNICO` o `ADMIN`.
+
+Efectos: el backend **genera una contraseña temporal** (10 caracteres, sin `0/O/1/l/I`), la guarda cifrada
+y la devuelve **solo en esta respuesta**. El usuario queda `activo: true`.
+
+Respuesta `201`:
+
+```json
+{
+  "usuario": { "id": "u10", "nombre": "Ana Ruiz", "correo": "ana.ruiz@utnay.edu.mx", "rol": "TECNICO", "activo": true },
+  "contrasenaTemporal": "Kp7mRw2xTa"
+}
+```
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `400` | Nombre corto o largo | `Escribe el nombre completo.` · `El nombre no puede pasar de 80 caracteres.` |
+| `400` | Correo de otro dominio | `El correo debe terminar en @utnay.edu.mx` |
+| `400` | Rol que no es `TECNICO` ni `ADMIN` | `Elige si es técnico o administrador.` |
+| `409` | Ya hay una cuenta con ese correo | `Ya existe una cuenta con ese correo.` |
+
+---
+
+### `PATCH /api/usuarios/:id`
+
+Edita el nombre o el rol, o activa/desactiva a un usuario. **Rol:** `ADMIN`.
+
+Petición (todos opcionales; se cambian solo los que vienen):
+
+```json
+{ "nombre": "Ana Ruiz López", "rol": "ADMIN", "activo": false }
+```
+
+- `nombre`: mismas reglas que al crear. El correo no se puede cambiar.
+- `rol`: `TECNICO` o `ADMIN` (un `REPORTANTE` se puede convertir en técnico o administrador; entonces pierde `tipo`).
+  Mandar el mismo rol que ya tiene no cuenta como cambio.
+- `activo`: `true` o `false`. Desactivar no borra nada: sus tickets y reportes se conservan.
+
+Respuesta `200`: el Usuario actualizado.
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `400` | Nombre no válido | (los del `POST`) |
+| `400` | Rol no válido | `Elige si es técnico o administrador.` |
+| `400` | `activo` no es booleano | `Estado no válido.` |
+| `403` | El admin intenta desactivarse a sí mismo | `No puedes desactivar tu propia cuenta.` |
+| `403` | El admin intenta cambiar su propio rol | `No puedes cambiar tu propio rol.` |
+| `404` | El usuario no existe | `Este usuario no existe.` |
+| `409` | Un técnico con tickets activos asignados se desactiva o deja de ser técnico | `Tiene 2 tickets activos. Reasígnalos a otro técnico antes de continuar.` (`1 ticket activo` si es uno) |
+
+---
+
+### `POST /api/usuarios/:id/restablecer`
+
+Genera una contraseña temporal nueva (la anterior deja de funcionar). Sin cuerpo. **Rol:** `ADMIN`.
+
+Respuesta `200` (la contraseña solo viene en esta respuesta):
+
+```json
+{ "contrasenaTemporal": "Hq4vNs8ePz" }
+```
+
+Errores: `404` `Este usuario no existe.`
+
+---
+
+### `GET /api/categorias`
+
+Todas las categorías (activas e inactivas) con su número de tickets activos. **Rol:** `ADMIN`.
+
+Orden: por `nombre`.
+
+Respuesta `200`:
+
+```json
+[
+  { "id": "c2", "nombre": "Audiovisual", "horasObjetivo": 24, "activa": true, "ticketsActivos": 1 },
+  { "id": "c6", "nombre": "Mobiliario", "horasObjetivo": 96, "activa": false, "ticketsActivos": 0 }
+]
+```
+
+Errores: `401` sin sesión, `403` si el rol no es `ADMIN`.
+
+---
+
+### `POST /api/categorias`
+
+Crea una categoría (queda `activa: true`). **Rol:** `ADMIN`.
+
+Petición:
+
+```json
+{ "nombre": "Jardinería", "horasObjetivo": 72 }
+```
+
+- `nombre`: obligatorio, máximo 40 caracteres (se recortan los espacios de los extremos y los dobles).
+  **Único** sin distinguir mayúsculas ni acentos (`computo` = `Cómputo`), contando las inactivas.
+- `horasObjetivo`: número entero mayor que 0 (en JSON es número, no texto).
+
+Respuesta `201`: la Categoría creada, con `ticketsActivos: 0`.
+
+Errores:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `400` | Falta el nombre o es largo | `Escribe el nombre de la categoría.` · `El nombre no puede pasar de 40 caracteres.` |
+| `400` | Horas no válidas | `Las horas objetivo deben ser un número entero mayor que 0.` |
+| `409` | Ya hay una categoría con ese nombre | `Ya existe una categoría con ese nombre.` |
+
+---
+
+### `PATCH /api/categorias/:id`
+
+Edita una categoría o la activa/desactiva. No hay `DELETE`. **Rol:** `ADMIN`.
+
+Petición (todos opcionales):
+
+```json
+{ "nombre": "Climatización", "horasObjetivo": 36, "activa": false }
+```
+
+Efectos: el cambio **solo afecta a los tickets nuevos** (cada ticket guarda una copia de su categoría,
+ver "Categoría"). Los tickets existentes no cambian su `venceEn`.
+
+Respuesta `200`: la Categoría actualizada, con `ticketsActivos`.
+
+Errores: los mismos `400` y `409` que el `POST` (el `409` sin contar la propia categoría), y además:
+
+| Código | Cuándo | `mensaje` |
+| --- | --- | --- |
+| `400` | `activa` no es booleano | `Estado no válido.` |
+| `404` | La categoría no existe | `Esta categoría no existe.` |
+| `409` | Es la única categoría activa y se intenta desactivar | `Debe quedar al menos una categoría activa para poder reportar.` |
+
+---
+
 ## Checklist para conectar el backend
 
 El frontend ya llama a todos estos endpoints desde `src/api/` y los mocks (`src/api/mocks/`) responden
@@ -906,6 +1109,13 @@ con las mismas formas y errores. Para conectar la base de datos solo falta imple
 | ☐ | `POST /api/equipos` | `src/app/api/equipos/route.js` (`POST`) | `ADMIN` |
 | ☐ | `GET /api/equipos/:id` | `src/app/api/equipos/[id]/route.js` (`GET`) | `ADMIN` |
 | ☐ | `PATCH /api/equipos/:id` | `src/app/api/equipos/[id]/route.js` (`PATCH`) | `ADMIN` |
+| ☐ | `GET /api/usuarios` | `src/app/api/usuarios/route.js` (`GET`) | `ADMIN` |
+| ☐ | `POST /api/usuarios` | `src/app/api/usuarios/route.js` (`POST`) | `ADMIN` |
+| ☐ | `PATCH /api/usuarios/:id` | `src/app/api/usuarios/[id]/route.js` | `ADMIN` |
+| ☐ | `POST /api/usuarios/:id/restablecer` | `src/app/api/usuarios/[id]/restablecer/route.js` | `ADMIN` |
+| ☐ | `GET /api/categorias` | `src/app/api/categorias/route.js` (`GET`) | `ADMIN` |
+| ☐ | `POST /api/categorias` | `src/app/api/categorias/route.js` (`POST`) | `ADMIN` |
+| ☐ | `PATCH /api/categorias/:id` | `src/app/api/categorias/[id]/route.js` | `ADMIN` |
 
 ### Reglas comunes
 
@@ -918,7 +1128,11 @@ con las mismas formas y errores. Para conectar la base de datos solo falta imple
       5 MB; guardarlas y devolver su URL en `fotoReporte` / `fotoCierre`.
 - [ ] Fechas en ISO 8601 UTC; `venceEn` = `creadoEn` + `horasObjetivo` de la categoría.
 - [ ] Cada cambio de estado agrega una entrada al `historial`.
-- [ ] Nunca devolver la contraseña; guardarla cifrada.
+- [ ] Nunca devolver la contraseña; guardarla cifrada. La única excepción es `contrasenaTemporal` en
+      `POST /api/usuarios` y `POST /api/usuarios/:id/restablecer` (se genera, se cifra y se devuelve una vez).
+- [ ] Usuario con `activo: false`: `403` en el login y `401` con su token en cualquier otro endpoint.
+- [ ] Ticket nuevo: guardar una **copia** de `{ id, nombre, horasObjetivo }` de su categoría (no una referencia
+      que cambie al editarla). `GET /api/catalogos` solo devuelve categorías activas.
 
 ### Apagar los mocks
 

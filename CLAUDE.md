@@ -91,8 +91,8 @@ src/
 | `/admin/tickets/[id]` | `(con-sesion)/admin/tickets/[id]/page.jsx` | Detalle del ticket | ADMIN |
 | `/admin/equipos` | `(con-sesion)/admin/equipos/page.jsx` | Equipos | ADMIN |
 | `/admin/equipos/[id]` | `(con-sesion)/admin/equipos/[id]/page.jsx` | Historial del equipo | ADMIN |
-| `/admin/usuarios` | `(con-sesion)/admin/usuarios/page.jsx` | Usuarios (temporal) | ADMIN |
-| `/admin/categorias` | `(con-sesion)/admin/categorias/page.jsx` | Categorías y regla de reemplazo (temporal) | ADMIN |
+| `/admin/usuarios` | `(con-sesion)/admin/usuarios/page.jsx` | Usuarios (alta de técnicos y administradores, editar, activar/desactivar, restablecer contraseña) | ADMIN |
+| `/admin/categorias` | `(con-sesion)/admin/categorias/page.jsx` | Categorías (crear, editar, activar/desactivar). La regla de reemplazo todavía no se edita aquí | ADMIN |
 | `/reportar` | `(con-sesion)/(reportante)/reportar/page.jsx` | Reportar falla (o sumarse a un reporte activo) | REPORTANTE |
 | `/reportes/[id]/enviado` | `(con-sesion)/(reportante)/reportes/[id]/enviado/page.jsx` | Reporte enviado / Te sumaste | REPORTANTE |
 | `/mis-reportes` | `(con-sesion)/(reportante)/mis-reportes/page.jsx` | Mis reportes (propios y sumados) | REPORTANTE |
