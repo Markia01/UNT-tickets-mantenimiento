@@ -25,7 +25,7 @@ function compararTickets(a, b) {
   return tiempo(b.cerradoEn) - tiempo(a.cerradoEn)
 }
 
-// GET /api/api/tickets (ver docs/api.md)
+// GET /api/tickets (ver docs/api.md)
 export function buscarTickets(consulta = {}, tickets = ticketsMock, ahora = new Date()) {
   const vista = VISTAS.includes(consulta.vista) ? consulta.vista : 'todos'
   const id = String(consulta.q ?? '').replace(/[#\s]/g, '')
@@ -72,7 +72,7 @@ export function buscarTickets(consulta = {}, tickets = ticketsMock, ahora = new 
   }
 }
 
-// GET /api/api/catalogos
+// GET /api/catalogos
 export function obtenerCatalogos() {
   const edificios = [...new Set(equiposMock.map((e) => e.ubicacion.edificio))].sort((a, b) =>
     a.localeCompare(b, 'es'),

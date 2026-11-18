@@ -13,13 +13,13 @@ const NO_EXISTE = error(404, 'Este ticket no existe.')
 const persona = ({ id, nombre }) => ({ id, nombre })
 const buscar = (id) => ticketsMock.find((t) => t.id === id)
 
-// GET /api/api/tickets/:id
+// GET /api/tickets/:id
 export function obtenerTicket(id) {
   const ticket = buscar(id)
   return ticket ? respuesta(200, ticket) : NO_EXISTE
 }
 
-// GET /api/api/tecnicos → técnicos activos con su número de tickets activos
+// GET /api/tecnicos → técnicos activos con su número de tickets activos
 export function listarTecnicos() {
   const tecnicos = usuariosMock
     .filter((u) => u.rol === 'TECNICO' && u.activo !== false)
@@ -32,7 +32,7 @@ export function listarTecnicos() {
   return respuesta(200, tecnicos)
 }
 
-// PATCH /api/api/tickets/:id/asignar { tecnicoId }
+// PATCH /api/tickets/:id/asignar { tecnicoId }
 export function asignarTecnico(id, cuerpo, usuario) {
   const ticket = buscar(id)
   if (!ticket) return NO_EXISTE
@@ -57,7 +57,7 @@ export function asignarTecnico(id, cuerpo, usuario) {
   return respuesta(200, ticket)
 }
 
-// PATCH /api/api/tickets/:id/cancelar { motivo }
+// PATCH /api/tickets/:id/cancelar { motivo }
 export function cancelarTicket(id, cuerpo, usuario) {
   const ticket = buscar(id)
   if (!ticket) return NO_EXISTE

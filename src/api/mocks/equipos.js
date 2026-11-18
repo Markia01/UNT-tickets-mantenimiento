@@ -41,7 +41,7 @@ function conFallas(equipo, ahora = new Date()) {
   }
 }
 
-// GET /api/api/equipos?q=&edificio=&tipo=&estado=
+// GET /api/equipos?q=&edificio=&tipo=&estado=
 export function listarEquipos(consulta = {}) {
   const estado = consulta.estado || 'ACTIVO'
   const q = normalizar(consulta.q)
@@ -62,7 +62,7 @@ export function listarEquipos(consulta = {}) {
   return respuesta(200, equipos)
 }
 
-// GET /api/api/equipos/:id → { equipo, estadisticas, tickets }
+// GET /api/equipos/:id → { equipo, estadisticas, tickets }
 export function obtenerEquipo(id, ahora = new Date()) {
   const equipo = equiposMock.find((e) => e.id === id)
   if (!equipo) return NO_EXISTE
@@ -124,7 +124,7 @@ const mismaUbicacionYDescripcion = (a, b) =>
   a.ubicacion.edificio === b.ubicacion.edificio &&
   normalizar(a.ubicacion.aula) === normalizar(b.ubicacion.aula)
 
-// POST /api/api/equipos { tipo, descripcion, ubicacion }
+// POST /api/equipos { tipo, descripcion, ubicacion }
 export function crearEquipo(cuerpo) {
   const { limpio, mensaje } = validar(cuerpo)
   if (mensaje) return error(400, mensaje)
@@ -138,7 +138,7 @@ export function crearEquipo(cuerpo) {
   return respuesta(201, conFallas(equipo))
 }
 
-// PATCH /api/api/equipos/:id { tipo?, descripcion?, ubicacion?, estado? }
+// PATCH /api/equipos/:id { tipo?, descripcion?, ubicacion?, estado? }
 export function editarEquipo(id, cuerpo) {
   const equipo = equiposMock.find((e) => e.id === id)
   if (!equipo) return NO_EXISTE
@@ -155,7 +155,7 @@ export function editarEquipo(id, cuerpo) {
   return respuesta(200, conFallas(equipo))
 }
 
-// GET /api/api/configuracion
+// GET /api/configuracion
 export function obtenerConfiguracion() {
   return respuesta(200, configuracionMock)
 }
