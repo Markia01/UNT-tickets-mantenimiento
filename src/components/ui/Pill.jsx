@@ -23,6 +23,12 @@ const EQUIPO = {
   BAJA: { clase: 'border border-borde bg-borde text-texto-2', texto: 'Dado de baja' },
 }
 
+// Usuarios y categorías: activo (borde negro) o inactivo (gris)
+const ACTIVO = {
+  true: 'border border-negro text-negro',
+  false: 'border border-borde bg-borde text-texto-2',
+}
+
 const ROL = {
   ADMIN: 'bg-negro text-crema',
   TECNICO: 'bg-borde text-negro',
@@ -32,7 +38,8 @@ const ROL = {
 const BASE = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold'
 
 // <Pill tipo="semaforo" valor="VENCIDO" /> (con children cambia el texto: "Vencido hace 6 h"), <Pill tipo="estado" valor="EN_PROCESO" />,
-// <Pill tipo="equipo" valor="BAJA" />, <Pill tipo="rol" valor="TECNICO" />, <Pill tipo="neutro">Cerrado en 26 h</Pill>
+// <Pill tipo="equipo" valor="BAJA" />, <Pill tipo="rol" valor="TECNICO" />, <Pill tipo="neutro">Cerrado en 26 h</Pill>,
+// <Pill tipo="activo" valor={false}>Inactivo</Pill> (el texto cambia de género: Activo/Activa)
 export default function Pill({ tipo, valor, className = '', children }) {
   if (tipo === 'semaforo') {
     const estilo = SEMAFORO[valor]
@@ -58,6 +65,10 @@ export default function Pill({ tipo, valor, className = '', children }) {
     const estilo = EQUIPO[valor]
     if (!estilo) return null
     return <span className={`${BASE} ${estilo.clase} ${className}`}>{estilo.texto}</span>
+  }
+
+  if (tipo === 'activo') {
+    return <span className={`${BASE} ${ACTIVO[Boolean(valor)]} ${className}`}>{children}</span>
   }
 
   if (tipo === 'rol') {

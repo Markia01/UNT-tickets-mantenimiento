@@ -21,7 +21,16 @@ export const categoriasMock = [
   { id: 'c3', nombre: 'Cómputo', horasObjetivo: 72 },
   { id: 'c4', nombre: 'Eléctrica', horasObjetivo: 48 },
   { id: 'c5', nombre: 'Plomería', horasObjetivo: 12 },
+  // Inactiva: no aparece en /reportar, pero sus tickets se conservan
+  { id: 'c6', nombre: 'Mobiliario', horasObjetivo: 96, activa: false },
 ]
+
+// Todas las categorías tienen `activa`; si no se indicó, están activas
+for (const c of categoriasMock) c.activa ??= true
+
+// Copia que guarda cada ticket al crearse: editar la categoría después no cambia
+// el nombre ni las horas de los tickets que ya existen (su venceEn ya está calculado)
+export const copiaCategoria = ({ id, nombre, horasObjetivo }) => ({ id, nombre, horasObjetivo })
 
 export const equiposMock = [
   {
@@ -72,7 +81,7 @@ export const equiposMock = [
     descripcion: 'HP ProDesk 400 · equipo 4',
     ubicacion: { edificio: 'Edificio B', aula: 'Laboratorio 1' },
   },
-  // Sin tickets: aparecen con 0 fallas
+  // Sin fallas: aparecen con 0 fallas
   {
     id: 'e9',
     tipo: 'Proyector',
@@ -85,6 +94,7 @@ export const equiposMock = [
     descripcion: 'Muro frontal, doble',
     ubicacion: { edificio: 'Edificio B', aula: 'Aula 5' },
   },
+  // Una falla, de la categoría desactivada "Mobiliario" (ticket #20)
   {
     id: 'e11',
     tipo: 'Pizarrón',

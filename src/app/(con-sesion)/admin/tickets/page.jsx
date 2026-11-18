@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useRef, useState } from 'react'
 import Link from 'next/link'
+import { getCategorias } from '@/api/categorias.js'
 import { getCatalogos, getTickets } from '@/api/tickets.js'
 import { IconoBuscar, IconoCerrar, IconoFiltros } from '@/components/layout/iconos.jsx'
 import CargandoPagina from '@/components/layout/CargandoPagina.jsx'
@@ -75,7 +76,7 @@ function Tiempo({ ticket, ahora }) {
 // ---------- Filtros ----------
 
 // `claseFecha` y `claseCampo`: anchos de los campos en la tarjeta de escritorio
-function CamposFiltro({ filtros, actualizar, catalogos, prefijo, claseFecha = '', claseCampo = '' }) {
+function CamposFiltro({ filtros, actualizar, catalogos, categorias, prefijo, claseFecha = '', claseCampo = '' }) {
   const cambiar = (clave) => (e) => actualizar({ [clave]: e.target.value })
   const soloCerrados = filtros.vista === 'cerrados'
 
@@ -121,9 +122,10 @@ function CamposFiltro({ filtros, actualizar, catalogos, prefijo, claseFecha = ''
         className={claseCampo}
       >
         <option value="">Todas</option>
-        {catalogos?.categorias.map((c) => (
+        {/* De GET /api/categorias: incluye las inactivas, que pueden tener tickets */}
+        {categorias?.map((c) => (
           <option key={c.id} value={c.id}>
-            {c.nombre}
+            {c.activa ? c.nombre : `${c.nombre} (inactiva)`}
           </option>
         ))}
       </Select>
@@ -297,6 +299,7 @@ function Tickets() {
   const cargar = useCallback(() => getTickets(Object.fromEntries(new URLSearchParams(consulta))), [consulta])
   const { datos, cargando, error, recibidoEn: ahora, reintentar } = useDatos(cargar)
   const { datos: catalogos } = useDatos(getCatalogos)
+  const { datos: categorias } = useDatos(getCategorias)
 
   const [panelAbierto, setPanelAbierto] = useState(false)
   const refLista = useRef(null)
@@ -386,6 +389,7 @@ function Tickets() {
               filtros={filtros}
               actualizar={actualizar}
               catalogos={catalogos}
+              categorias={categorias}
               prefijo="filtro"
               claseFecha="w-44 shrink-0"
               claseCampo="min-w-28 flex-1"
@@ -435,7 +439,7 @@ function Tickets() {
         }
       >
         <div className="grid gap-4">
-          <CamposFiltro filtros={filtros} actualizar={actualizar} catalogos={catalogos} prefijo="panel" />
+          <CamposFiltro filtros={filtros} actualizar={actualizar} catalogos={catalogos} categorias={categorias} prefijo="panel" />
         </div>
       </Modal>
 

@@ -34,6 +34,52 @@ export const usuariosMock = [
     contrasena: 'demo1234',
     activo: true,
   },
+  // Quienes reportan los tickets de prueba (src/api/mocks/tickets.js)
+  {
+    id: 'u5',
+    nombre: '[ALUMNO 1]',
+    correo: 'alumno1@utnay.edu.mx',
+    rol: 'REPORTANTE',
+    tipo: 'Alumno',
+    contrasena: 'demo1234',
+    activo: true,
+  },
+  {
+    id: 'u6',
+    nombre: '[PERSONAL 1]',
+    correo: 'personal1@utnay.edu.mx',
+    rol: 'REPORTANTE',
+    tipo: 'Personal',
+    contrasena: 'demo1234',
+    activo: true,
+  },
+  {
+    id: 'u7',
+    nombre: '[DOCENTE 2]',
+    correo: 'docente2@utnay.edu.mx',
+    rol: 'REPORTANTE',
+    tipo: 'Docente',
+    contrasena: 'demo1234',
+    activo: true,
+  },
+  {
+    id: 'u8',
+    nombre: '[ALUMNO 2]',
+    correo: 'alumno2@utnay.edu.mx',
+    rol: 'REPORTANTE',
+    tipo: 'Alumno',
+    contrasena: 'demo1234',
+    activo: true,
+  },
+  // Desactivado: no puede iniciar sesión ni aparece para asignar tickets
+  {
+    id: 'u9',
+    nombre: '[TÉCNICO 3]',
+    correo: 'tecnico3@utnay.edu.mx',
+    rol: 'TECNICO',
+    contrasena: 'demo1234',
+    activo: false,
+  },
 ]
 
 // Usuario sin contraseña, como lo devuelve la API
@@ -41,13 +87,15 @@ export function sinContrasena({ contrasena: _contrasena, ...usuario }) {
   return usuario
 }
 
-// En modo mock el token es "token-de-prueba-<id del usuario>"
+// En modo mock el token es "token-de-prueba-<id del usuario>".
+// Un usuario desactivado ya no tiene sesión válida (la API responde 401).
 export function usuarioDeToken(token) {
   const id = token?.replace('token-de-prueba-', '')
-  return usuariosMock.find((u) => u.id === id) ?? null
+  return usuariosMock.find((u) => u.id === id && u.activo) ?? null
 }
 
 const DOMINIO = '@utnay.edu.mx'
+const siguienteId = () => `u${Math.max(0, ...usuariosMock.map((u) => Number(u.id.slice(1)) || 0)) + 1}`
 const TIPOS = ['Alumno', 'Docente', 'Personal']
 const error = (status, mensaje) => ({ status, datos: { mensaje } })
 
@@ -66,7 +114,7 @@ export function registrarUsuario(cuerpo) {
   if (usuariosMock.some((u) => u.correo === correo)) return error(409, 'Ya existe una cuenta con ese correo.')
 
   const usuario = {
-    id: `u${100 + usuariosMock.length}`,
+    id: siguienteId(),
     nombre,
     correo,
     rol: 'REPORTANTE',

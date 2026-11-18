@@ -158,6 +158,15 @@ export function IconoMas(props) {
   )
 }
 
+export function IconoCopiar(props) {
+  return (
+    <Icono {...props}>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15H4a1 1 0 01-1-1V4a1 1 0 011-1h10a1 1 0 011 1v1" />
+    </Icono>
+  )
+}
+
 export function IconoAdvertencia(props) {
   return (
     <Icono {...props}>

@@ -1,6 +1,6 @@
 import { errorFoto, hayArchivo } from '../../utils/foto.js'
 import { esActivo } from '../../utils/semaforo.js'
-import { categoria, equipo } from './catalogos.js'
+import { categoria, copiaCategoria, equipo } from './catalogos.js'
 import { ticketsMock } from './tickets.js'
 
 // Endpoints de quien reporta (y la lectura de un ticket según el rol).
@@ -66,7 +66,7 @@ export function crearReporte(cuerpo, usuario) {
   if (!eq || eq.estado !== 'ACTIVO') return error(400, 'Elige un equipo válido.')
 
   const cat = categoria(String(campo(cuerpo, 'categoriaId') ?? ''))
-  if (!cat) return error(400, 'Elige la categoría de la falla.')
+  if (!cat || !cat.activa) return error(400, 'Elige la categoría de la falla.')
 
   const descripcion = String(campo(cuerpo, 'descripcion') ?? '').trim()
   if (descripcion.length < MIN_DESCRIPCION) {
@@ -98,7 +98,7 @@ export function crearReporte(cuerpo, usuario) {
     descripcion,
     estado: 'ABIERTO',
     equipo: eq,
-    categoria: cat,
+    categoria: copiaCategoria(cat),
     reporta: { id: usuario.id, nombre: usuario.nombre, tipo: usuario.tipo ?? null },
     tecnico: null,
     fotoReporte: conFoto ? urlFoto(foto) : null,

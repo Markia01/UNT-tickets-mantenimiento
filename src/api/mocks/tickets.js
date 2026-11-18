@@ -1,4 +1,4 @@
-import { categoria, equipo } from './catalogos.js'
+import { categoria, copiaCategoria, equipo } from './catalogos.js'
 
 // Tickets de prueba con la forma descrita en docs/api.md.
 // Las fechas se calculan relativas al momento en que se abre la app, así que
@@ -73,7 +73,7 @@ function crearTicket({
     descripcion,
     estado,
     equipo: equipo(equipoId),
-    categoria: cat,
+    categoria: copiaCategoria(cat),
     reporta,
     tecnico,
     fotoReporte: sinFotoReporte ? null : fotoPrueba(`Foto del reporte #${id}`),
@@ -197,6 +197,20 @@ export const ticketsMock = [
   }),
 
   // ---- Cerrados ----
+  // De "Mobiliario" (c6), categoría desactivada: el ticket se conserva igual
+  crearTicket({
+    id: '20',
+    equipoId: 'e11',
+    categoriaId: 'c6',
+    reporta: PERSONAL,
+    descripcion: 'El pizarrón está flojo; se mueve al escribir en él.',
+    creadoHace: 40 * DIA_H,
+    tecnico: TECNICO_2,
+    asignadoHace: 40 * DIA_H - 3,
+    enProcesoHace: 39 * DIA_H,
+    cerradoHace: 39 * DIA_H - 2,
+    comentarioCierre: 'Se reforzaron los anclajes del pizarrón al muro.',
+  }),
   crearTicket({
     id: '18',
     equipoId: 'e7',
