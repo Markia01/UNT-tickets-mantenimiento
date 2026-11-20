@@ -1,3 +1,5 @@
+import { errorCorreo } from '../../utils/correo.js'
+
 // Usuarios de prueba. La contraseña de todos es "demo1234".
 // Los REPORTANTE tienen además `tipo`: Alumno, Docente o Personal.
 export const usuariosMock = [
@@ -94,7 +96,6 @@ export function usuarioDeToken(token) {
   return usuariosMock.find((u) => u.id === id && u.activo) ?? null
 }
 
-const DOMINIO = '@utnay.edu.mx'
 const siguienteId = () => `u${Math.max(0, ...usuariosMock.map((u) => Number(u.id.slice(1)) || 0)) + 1}`
 const TIPOS = ['Alumno', 'Docente', 'Personal']
 const error = (status, mensaje) => ({ status, datos: { mensaje } })
@@ -106,9 +107,8 @@ export function registrarUsuario(cuerpo) {
   const contrasena = String(cuerpo?.contrasena ?? '')
 
   if (nombre.length < 3) return error(400, 'Escribe tu nombre completo.')
-  if (!correo.endsWith(DOMINIO) || correo.length <= DOMINIO.length) {
-    return error(400, `El correo debe terminar en ${DOMINIO}`)
-  }
+  const errorDeCorreo = errorCorreo(correo)
+  if (errorDeCorreo) return error(400, errorDeCorreo)
   if (!TIPOS.includes(cuerpo?.tipo)) return error(400, 'Elige si eres alumno, docente o personal.')
   if (contrasena.length < 8) return error(400, 'La contraseña debe tener al menos 8 caracteres.')
   if (usuariosMock.some((u) => u.correo === correo)) return error(409, 'Ya existe una cuenta con ese correo.')

@@ -1,3 +1,4 @@
+import { errorCorreo } from '../../utils/correo.js'
 import { esActivo } from '../../utils/semaforo.js'
 import { ticketsMock } from './tickets.js'
 import { sinContrasena, usuariosMock } from './usuarios.js'
@@ -5,7 +6,6 @@ import { sinContrasena, usuariosMock } from './usuarios.js'
 // GET/POST/PATCH /api/usuarios y POST /api/usuarios/:id/restablecer (ADMIN).
 // Los cambios se guardan en `usuariosMock` (en memoria): duran hasta recargar la página.
 
-const DOMINIO = '@utnay.edu.mx'
 const ROLES = ['ADMIN', 'TECNICO', 'REPORTANTE']
 // Los reportantes se registran solos: aquí solo se crean (o se convierten en) técnicos y administradores
 const ROLES_ASIGNABLES = ['ADMIN', 'TECNICO']
@@ -57,9 +57,8 @@ export function crearUsuario(cuerpo = {}) {
   const { nombre, mensaje } = validarNombre(cuerpo.nombre)
   if (mensaje) return error(400, mensaje)
   const correo = String(cuerpo.correo ?? '').trim().toLowerCase()
-  if (!correo.endsWith(DOMINIO) || correo.length <= DOMINIO.length || /\s/.test(correo)) {
-    return error(400, `El correo debe terminar en ${DOMINIO}`)
-  }
+  const errorDeCorreo = errorCorreo(correo)
+  if (errorDeCorreo) return error(400, errorDeCorreo)
   if (!ROLES_ASIGNABLES.includes(cuerpo.rol)) return error(400, 'Elige si es técnico o administrador.')
   if (usuariosMock.some((u) => u.correo === correo)) return error(409, 'Ya existe una cuenta con ese correo.')
 
