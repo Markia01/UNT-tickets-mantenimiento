@@ -14,7 +14,7 @@ Los datos de prueba del frontend (`src/api/mocks/`) usan exactamente estas forma
   que reciben una foto (`POST /api/tickets` y `PATCH /api/tickets/:id/cerrar`): esos reciben
   `multipart/form-data` y la foto va en el campo **`foto`**. Las respuestas siempre son JSON.
 - **Fotos:** solo imágenes (`image/*`) de **5 MB como máximo**. El backend las guarda y en el ticket
-  devuelve su URL (`"/uploads/tickets/20-reporte.jpg"`). Si no cumple: `400` con el mensaje
+  devuelve su URL (`"/api/fotos/<id>"`; se guardan en la colección `fotos` y se sirven en `GET /api/fotos/:id`, sin token). No se aceptan SVG. Si no cumple: `400` con el mensaje
   `El archivo debe ser una imagen (JPG, PNG, HEIC…).` o `La foto pesa más de 5 MB. Toma otra o elige una más ligera.`
 - **Creación:** los `POST` que crean algo responden `201` con lo creado.
 - **Autenticación:** después de iniciar sesión, cada petición manda el token en el encabezado
@@ -1087,35 +1087,46 @@ con las mismas formas y errores. Para conectar la base de datos solo falta imple
 
 | ✔ | Método y ruta | Archivo sugerido | Rol |
 | --- | --- | --- | --- |
-| ☐ | `POST /api/auth/login` | `src/app/api/auth/login/route.js` | público |
-| ☐ | `POST /api/auth/registro` | `src/app/api/auth/registro/route.js` | público |
-| ☐ | `POST /api/auth/cambiar-contrasena` | `src/app/api/auth/cambiar-contrasena/route.js` | público |
-| ☐ | `GET /api/catalogos` | `src/app/api/catalogos/route.js` | con sesión |
-| ☐ | `GET /api/configuracion` | `src/app/api/configuracion/route.js` | `ADMIN` |
-| ☐ | `GET /api/admin/resumen` | `src/app/api/admin/resumen/route.js` | `ADMIN` |
-| ☐ | `GET /api/tickets` | `src/app/api/tickets/route.js` (`GET`) | `ADMIN` |
-| ☐ | `POST /api/tickets` (multipart) | `src/app/api/tickets/route.js` (`POST`) | `REPORTANTE` |
-| ☐ | `GET /api/tickets/activo?equipoId=` | `src/app/api/tickets/activo/route.js` | `REPORTANTE` |
-| ☐ | `GET /api/tickets/mios` | `src/app/api/tickets/mios/route.js` | `REPORTANTE` |
-| ☐ | `GET /api/tickets/:id` | `src/app/api/tickets/[id]/route.js` | con sesión (reglas por rol) |
-| ☐ | `POST /api/tickets/:id/sumarme` | `src/app/api/tickets/[id]/sumarme/route.js` | `REPORTANTE` |
-| ☐ | `PATCH /api/tickets/:id/asignar` | `src/app/api/tickets/[id]/asignar/route.js` | `ADMIN` |
-| ☐ | `PATCH /api/tickets/:id/cancelar` | `src/app/api/tickets/[id]/cancelar/route.js` | `ADMIN` |
-| ☐ | `PATCH /api/tickets/:id/en-proceso` | `src/app/api/tickets/[id]/en-proceso/route.js` | `TECNICO` (asignado) |
-| ☐ | `PATCH /api/tickets/:id/cerrar` (multipart) | `src/app/api/tickets/[id]/cerrar/route.js` | `TECNICO` (asignado) |
-| ☐ | `GET /api/tecnico/tickets` | `src/app/api/tecnico/tickets/route.js` | `TECNICO` |
-| ☐ | `GET /api/tecnicos` | `src/app/api/tecnicos/route.js` | `ADMIN` |
-| ☐ | `GET /api/equipos` | `src/app/api/equipos/route.js` (`GET`) | `ADMIN` |
-| ☐ | `POST /api/equipos` | `src/app/api/equipos/route.js` (`POST`) | `ADMIN` |
-| ☐ | `GET /api/equipos/:id` | `src/app/api/equipos/[id]/route.js` (`GET`) | `ADMIN` |
-| ☐ | `PATCH /api/equipos/:id` | `src/app/api/equipos/[id]/route.js` (`PATCH`) | `ADMIN` |
-| ☐ | `GET /api/usuarios` | `src/app/api/usuarios/route.js` (`GET`) | `ADMIN` |
-| ☐ | `POST /api/usuarios` | `src/app/api/usuarios/route.js` (`POST`) | `ADMIN` |
-| ☐ | `PATCH /api/usuarios/:id` | `src/app/api/usuarios/[id]/route.js` | `ADMIN` |
-| ☐ | `POST /api/usuarios/:id/restablecer` | `src/app/api/usuarios/[id]/restablecer/route.js` | `ADMIN` |
-| ☐ | `GET /api/categorias` | `src/app/api/categorias/route.js` (`GET`) | `ADMIN` |
-| ☐ | `POST /api/categorias` | `src/app/api/categorias/route.js` (`POST`) | `ADMIN` |
-| ☐ | `PATCH /api/categorias/:id` | `src/app/api/categorias/[id]/route.js` | `ADMIN` |
+| ✔ | `POST /api/auth/login` | `src/app/api/auth/login/route.js` | público |
+| ✔ | `POST /api/auth/registro` | `src/app/api/auth/registro/route.js` | público |
+| ✔ | `POST /api/auth/cambiar-contrasena` | `src/app/api/auth/cambiar-contrasena/route.js` | público |
+| ✔ | `GET /api/catalogos` | `src/app/api/catalogos/route.js` | con sesión |
+| ✔ | `GET /api/configuracion` | `src/app/api/configuracion/route.js` | `ADMIN` |
+| ✔ | `GET /api/admin/resumen` | `src/app/api/admin/resumen/route.js` | `ADMIN` |
+| ✔ | `GET /api/tickets` | `src/app/api/tickets/route.js` (`GET`) | `ADMIN` |
+| ✔ | `POST /api/tickets` (multipart) | `src/app/api/tickets/route.js` (`POST`) | `REPORTANTE` |
+| ✔ | `GET /api/tickets/activo?equipoId=` | `src/app/api/tickets/activo/route.js` | `REPORTANTE` |
+| ✔ | `GET /api/tickets/mios` | `src/app/api/tickets/mios/route.js` | `REPORTANTE` |
+| ✔ | `GET /api/tickets/:id` | `src/app/api/tickets/[id]/route.js` | con sesión (reglas por rol) |
+| ✔ | `POST /api/tickets/:id/sumarme` | `src/app/api/tickets/[id]/sumarme/route.js` | `REPORTANTE` |
+| ✔ | `PATCH /api/tickets/:id/asignar` | `src/app/api/tickets/[id]/asignar/route.js` | `ADMIN` |
+| ✔ | `PATCH /api/tickets/:id/cancelar` | `src/app/api/tickets/[id]/cancelar/route.js` | `ADMIN` |
+| ✔ | `PATCH /api/tickets/:id/en-proceso` | `src/app/api/tickets/[id]/en-proceso/route.js` | `TECNICO` (asignado) |
+| ✔ | `PATCH /api/tickets/:id/cerrar` (multipart) | `src/app/api/tickets/[id]/cerrar/route.js` | `TECNICO` (asignado) |
+| ✔ | `GET /api/tecnico/tickets` | `src/app/api/tecnico/tickets/route.js` | `TECNICO` |
+| ✔ | `GET /api/tecnicos` | `src/app/api/tecnicos/route.js` | `ADMIN` |
+| ✔ | `GET /api/equipos` | `src/app/api/equipos/route.js` (`GET`) | `ADMIN` |
+| ✔ | `POST /api/equipos` | `src/app/api/equipos/route.js` (`POST`) | `ADMIN` |
+| ✔ | `GET /api/equipos/:id` | `src/app/api/equipos/[id]/route.js` (`GET`) | `ADMIN` |
+| ✔ | `PATCH /api/equipos/:id` | `src/app/api/equipos/[id]/route.js` (`PATCH`) | `ADMIN` |
+| ✔ | `GET /api/usuarios` | `src/app/api/usuarios/route.js` (`GET`) | `ADMIN` |
+| ✔ | `POST /api/usuarios` | `src/app/api/usuarios/route.js` (`POST`) | `ADMIN` |
+| ✔ | `PATCH /api/usuarios/:id` | `src/app/api/usuarios/[id]/route.js` | `ADMIN` |
+| ✔ | `POST /api/usuarios/:id/restablecer` | `src/app/api/usuarios/[id]/restablecer/route.js` | `ADMIN` |
+| ✔ | `GET /api/categorias` | `src/app/api/categorias/route.js` (`GET`) | `ADMIN` |
+| ✔ | `POST /api/categorias` | `src/app/api/categorias/route.js` (`POST`) | `ADMIN` |
+| ✔ | `PATCH /api/categorias/:id` | `src/app/api/categorias/[id]/route.js` | `ADMIN` |
+| ✔ | `GET /api/fotos/:id` | `src/app/api/fotos/[id]/route.js` | público (lo usa `<img>`) |
+
+### Base de datos
+
+- Base `tickets_utn` (va en `MONGODB_URI`). Colecciones: `usuarios`, `categorias`, `equipos`, `tickets`,
+  `contadores` (folio consecutivo de los tickets) y `fotos`. Se crean solas la primera vez que la app se
+  conecta (por ejemplo al abrir `/api/salud`).
+- Variables en `.env.local`: `MONGODB_URI` y `JWT_SECRET` (ver `.env.example`).
+- Edificios, tipos de equipo y la regla de reemplazo están en `src/lib/api/config.js`.
+- No hay usuarios precargados: los reportantes se registran en `/registro`. El primer administrador se
+  hace registrándose y cambiando su `rol` a `"ADMIN"` en Atlas.
 
 ### Reglas comunes
 
